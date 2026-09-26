@@ -62,7 +62,7 @@ import SwiftData
      }
      activeAgent=nil
     }
-    for try await(chunk,_)in await service.stream(messages:api,modelID:selected,settings:settings,capability:selectedCapability){assistant.content+=chunk}
+    for try await(chunk,_)in await service.stream(messages:api,modelID:selected,settings:settings,capability:selectedCapability){assistant.content+=chunk}\n    try ResponseQualityGuard.validate(assistant.content,expectedArabic:Self.containsArabic(text))
    }catch{
     if assistant.content.isEmpty{context.delete(assistant)}
     errorMessage=error.localizedDescription
@@ -87,5 +87,5 @@ import SwiftData
   guard let p=c.messages.sorted(by:{$0.createdAt<$1.createdAt}).last(where:{$0.role=="user"})else{return}
   draft=p.content;context.delete(p);send(in:c,context:context)
  }
- func stop(){task?.cancel();activeAgent=nil;isStreaming=false}
+ private static func containsArabic(_ text:String)->Bool{text.unicodeScalars.contains{(0x0600...0x06FF).contains($0.value) || (0x0750...0x077F).contains($0.value) || (0x08A0...0x08FF).contains($0.value)}}\n func stop(){task?.cancel();activeAgent=nil;isStreaming=false}
 }
