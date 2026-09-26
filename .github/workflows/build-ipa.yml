@@ -28,6 +28,25 @@ jobs:
           brew install xcodegen
           xcodegen --version
 
+      - name: Prepare AppIcon assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          ICON_DIR="NChat/Assets.xcassets/AppIcon.appiconset"
+          SOURCE="$ICON_DIR/AppIcon-1024.png"
+          test -f "$SOURCE"
+          sips -z 40 40 "$SOURCE" --out "$ICON_DIR/AppIcon-40.png" >/dev/null
+          sips -z 60 60 "$SOURCE" --out "$ICON_DIR/AppIcon-60.png" >/dev/null
+          sips -z 58 58 "$SOURCE" --out "$ICON_DIR/AppIcon-58.png" >/dev/null
+          sips -z 87 87 "$SOURCE" --out "$ICON_DIR/AppIcon-87.png" >/dev/null
+          sips -z 80 80 "$SOURCE" --out "$ICON_DIR/AppIcon-80.png" >/dev/null
+          sips -z 120 120 "$SOURCE" --out "$ICON_DIR/AppIcon-120-40.png" >/dev/null
+          sips -z 120 120 "$SOURCE" --out "$ICON_DIR/AppIcon-120.png" >/dev/null
+          sips -z 180 180 "$SOURCE" --out "$ICON_DIR/AppIcon-180.png" >/dev/null
+          for file in "$ICON_DIR"/AppIcon-*.png; do
+            test -s "$file"
+          done
+
       - name: Generate Xcode project
         shell: bash
         run: |
