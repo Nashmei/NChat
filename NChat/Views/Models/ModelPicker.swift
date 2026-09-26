@@ -1,18 +1,21 @@
 import SwiftUI
 
-struct ModelPicker: View {
-    @Bindable var conversation: Conversation
-    var body: some View {
+struct ModelPicker:View {
+    @Bindable var conversation:Conversation
+    @ObservedObject private var catalog=ModelCatalogStore.shared
+    @State private var search=""
+    var body:some View {
         Menu {
-            ForEach(ModelOption.featured) { model in
-                Button { conversation.modelID=model.id } label: {
-                    if conversation.modelID==model.id { Label(model.title,systemImage:"checkmark") } else { Text(model.title) }
+            if catalog.models.isEmpty { Button("Load NVIDIA models"){Task{await catalog.refresh()}} }
+            ForEach(catalog.models.filter{search.isEmpty || $0.id.localizedCaseInsensitiveContains(search)}.prefix(80)) { model in
+                Button { conversation.modelID=model.id } label:{
+                    Label(model.displayName,systemImage:catalog.verified.contains(model.id) ? "checkmark.seal.fill" : "circle")
                 }
             }
-            Divider()
-            Button("Custom model…") {}
-        } label: {
-            HStack(spacing:5) { Text(ModelOption.featured.first(where:{$0.id==conversation.modelID})?.title ?? conversation.modelID).font(.subheadline).bold().lineLimit(1); Image(systemName:"chevron.down").font(.caption2) }
+            Divider(); Button("Refresh models"){Task{await catalog.refresh()}}
+        } label:{
+            HStack(spacing:5){Text(conversation.modelID.split(separator:"/").last.map(String.init) ?? conversation.modelID).font(.subheadline).bold().lineLimit(1);Image(systemName:"chevron.down").font(.caption2)}
         }
+        .task{if catalog.models.isEmpty{await catalog.refresh()}}
     }
 }
