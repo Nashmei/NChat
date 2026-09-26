@@ -23,7 +23,7 @@ struct SettingsView: View {
                     TextField("Custom model ID",text:$customModel).textInputAutocapitalization(.never).autocorrectionDisabled()
                 }
                 Section("Privacy") { Label("API key is stored in iOS Keychain",systemImage:"lock.shield"); Label("Chats stay on this device",systemImage:"iphone") }
-                Section("About") { LabeledContent("Provider","NVIDIA NIM"); LabeledContent("Client","Native SwiftUI"); LabeledContent("Minimum iOS","17.0") }
+                Section("About") { LabeledContent("Provider", value: "NVIDIA NIM"); LabeledContent("Client", value: "Native SwiftUI"); LabeledContent("Minimum iOS", value: "17.0") }
             }
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement:.confirmationAction) { Button("Done"){dismiss()} } }
