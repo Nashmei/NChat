@@ -35,6 +35,11 @@ jobs:
           ICON_DIR="NChat/Assets.xcassets/AppIcon.appiconset"
           SOURCE="$ICON_DIR/AppIcon-1024.png"
           test -f "$SOURCE"
+          file "$SOURCE"
+          WIDTH="$(sips -g pixelWidth "$SOURCE" | awk '/pixelWidth/ {print $2}')"
+          HEIGHT="$(sips -g pixelHeight "$SOURCE" | awk '/pixelHeight/ {print $2}')"
+          test "$WIDTH" = "1024"
+          test "$HEIGHT" = "1024"
           sips -z 40 40 "$SOURCE" --out "$ICON_DIR/AppIcon-40.png" >/dev/null
           sips -z 60 60 "$SOURCE" --out "$ICON_DIR/AppIcon-60.png" >/dev/null
           sips -z 58 58 "$SOURCE" --out "$ICON_DIR/AppIcon-58.png" >/dev/null
