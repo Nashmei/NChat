@@ -11,7 +11,7 @@ private struct StreamEnvelope:Decodable {
  let choices:[Choice]
 }
 enum NVIDIAServiceError:LocalizedError {
- case authentication,unsupportedVision,badResponse(Int),emptyResponse
+ case authentication,unsupportedVision,rateLimited,badResponse(Int,String?),emptyResponse
  var errorDescription:String? {
   switch self {
   case .authentication:return "NVIDIA API key is missing or invalid."
