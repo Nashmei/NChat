@@ -22,5 +22,5 @@ struct RootView:View {
   .alert("Rename chat",isPresented:Binding(get:{rename != nil},set:{if !$0{rename=nil}})){TextField("Name",text:$renameText);Button("Save"){rename?.title=renameText;rename=nil};Button("Cancel",role:.cancel){rename=nil}}
   .onAppear{if selected==nil{selected=conversations.first}}
  }
- private func newChat(){let model=UserDefaults.standard.string(forKey:"lastWorkingModel") ?? catalog.passedModels.first?.id ?? AppSettings.defaultModel;let c=Conversation(modelID:model,systemPrompt:UserDefaults.standard.string(forKey:"defaultSystemPrompt") ?? "");context.insert(c);selected=c}
+ private func newChat(){guard !catalog.passedModels.isEmpty else{showSettings=true;return};let saved=UserDefaults.standard.string(forKey:"lastWorkingModel");let model=catalog.passedModels.contains(where:{$0.id==saved}) ? saved! : catalog.passedModels[0].id;let c=Conversation(modelID:model,systemPrompt:UserDefaults.standard.string(forKey:"defaultSystemPrompt") ?? "");context.insert(c);selected=c}
 }
