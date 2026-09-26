@@ -1,29 +1,36 @@
-# NChat
+# NChat 2.0
 
-Native SwiftUI chat client for NVIDIA NIM APIs on iPhone.
+Native SwiftUI AI client for NVIDIA NIM on iPhone.
 
-## Current capabilities
-- Local-first multi-conversation UI with SwiftData
-- NVIDIA API key stored only in iOS Keychain
-- OpenAI-compatible NVIDIA NIM chat completions
-- Server-Sent Events streaming and Stop generation
-- Separate reasoning display when the model returns reasoning_content
-- Per-chat model selection
-- System prompt support and advanced generation model in the architecture
-- Markdown rendering, text selection, rename-ready conversation model
-- Dark/light mode follows iOS
-- GitHub Actions IPA build
+## Highlights
+- NVIDIA API key stored in iOS Keychain
+- Full NVIDIA model catalog discovery
+- Automatic model validation after saving a key and whenever the app becomes active
+- Only verified chat models appear in the picker
+- Arabic + Latin Unicode quality probe, streaming check and latency measurement
+- Capability profiles for Text, Vision, Reasoning, Tools and Arabic
+- Capability-aware request payloads
+- Native streaming chat with Stop and Regenerate
+- Raw internal reasoning is not rendered in chat
+- Built-in language policy: reply in the language of the latest user message
+- Local-first SwiftData conversations, search, pin, rename, delete and export
+- Image/file attachments with Vision-model validation
+- Main responsible model + configurable specialist Agents
+- Agent failures fall back to the main model
+- Markdown and copyable code blocks
+- Context budget and advanced generation controls
+- Dark violet NChat visual system with an original NChat identity
 
 ## Architecture
-SwiftUI + SwiftData + async/await + URLSession SSE + Keychain. The provider is isolated in Services so additional OpenAI-compatible providers can be added without rewriting the UI.
+SwiftUI + SwiftData + async/await + URLSession SSE + Keychain.
 
-## NVIDIA
-Endpoint: https://integrate.api.nvidia.com/v1/chat/completions
+Core layers: NVIDIAService for NVIDIA transport, ModelCatalogStore for discovery and validation, ChatViewModel for orchestration and fallback, and NChatTheme for the visual system.
 
-Never commit API keys. Open Settings in NChat and store your key in Keychain.
+## Privacy
+API keys are not committed or stored in chat history. They are saved in Keychain. Conversations are local-first.
 
-## Build locally
-Install XcodeGen, run `xcodegen generate`, then open `NChat.xcodeproj`.
+## Version
+NChat 2.0.0 (Build 20)
 
-## IPA
-Run the **Build NChat IPA** GitHub Action. The default artifact is an unsigned IPA intended for external signing tools. For App Store/TestFlight distribution, use an Apple Developer certificate and provisioning profile.
+## Build
+The GitHub workflow is manual-only. Use Actions > Build NChat IPA > Run workflow when an IPA is wanted. Pushes do not trigger builds.
