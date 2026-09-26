@@ -4,21 +4,25 @@ options:
 settings:
   base:
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+
 targets:
   NChat:
     type: application
     platform: iOS
-    sources: [NChat]
+    sources:
+      - NChat
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nashmei.NChat
         PRODUCT_NAME: NChat
         MARKETING_VERSION: "2.0.0"
         CURRENT_PROJECT_VERSION: "20"
-        SWIFT_VERSION: "5.0"\n        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "5.0"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: NChat
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES\n        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Attach images to AI conversations."
         INFOPLIST_KEY_NSCameraUsageDescription: "Capture images to attach to AI conversations."
