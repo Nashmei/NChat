@@ -13,6 +13,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nashmei.NChat
         PRODUCT_NAME: NChat
+        MARKETING_VERSION: "2.0.0"
+        CURRENT_PROJECT_VERSION: "20"
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
