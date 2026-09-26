@@ -20,7 +20,7 @@ struct SettingsView: View {
                                 try KeychainStore.save(apiKey)
                                 saved = true
                                 apiKey = ""
-                                Task { await catalog.refreshAndValidate() }
+                                Task { await catalog.refreshAndValidate(force:true) }
                             } catch { }
                         }
                         .disabled(apiKey.isEmpty)
