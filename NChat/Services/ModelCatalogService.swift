@@ -16,7 +16,7 @@ private struct ModelsEnvelope:Decodable{let data:[NVIDIAListModel]}
  @Published var totalToTest=0
  @Published var error:String?
  private let catalogKey="nvidia-passed-models-v2"
- private let capabilityKey="nvidia-model-capabilities-v2"
+ private let capabilityKey="nvidia-model-capabilities-v3"
  var passedModels:[NVIDIAListModel]{models.filter{capabilities[$0.id]?.passed==true}}
  var progress:Double{totalToTest==0 ? 0:Double(testedCount)/Double(totalToTest)}
  private init(){loadCache()}
@@ -63,9 +63,9 @@ private struct ModelsEnvelope:Decodable{let data:[NVIDIAListModel]}
    let latinOK=normalized.uppercased().contains("NCHAT")
    let corrupted=normalized.contains("�")
    let passed=arabicOK && latinOK && !corrupted
-   return(model,.init(id:model.id,displayName:model.displayName,passed:passed,supportsArabic:arabicOK,supportsStreaming:true,testedAt:.now,latencyMS:latency,failureReason:passed ? nil:"Quality probe returned invalid multilingual text"))
+   return(model,.init(id:model.id,displayName:model.displayName,passed:passed,supportsArabic:arabicOK,supportsStreaming:true,supportsVision:ModelEligibility.inferredVision(model.id),supportsReasoning:ModelEligibility.inferredReasoning(model.id),supportsTools:ModelEligibility.inferredTools(model.id),testedAt:.now,latencyMS:latency,failureReason:passed ? nil:"Quality probe returned invalid multilingual text"))
   }catch{
-   return(model,.init(id:model.id,displayName:model.displayName,passed:false,supportsArabic:false,supportsStreaming:false,testedAt:.now,latencyMS:Int(Date().timeIntervalSince(start)*1000),failureReason:error.localizedDescription))
+   return(model,.init(id:model.id,displayName:model.displayName,passed:false,supportsArabic:false,supportsStreaming:false,supportsVision:false,supportsReasoning:false,supportsTools:false,testedAt:.now,latencyMS:Int(Date().timeIntervalSince(start)*1000),failureReason:error.localizedDescription))
   }
  }
 
