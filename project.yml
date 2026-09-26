@@ -1,6 +1,7 @@
 name: NChat
 options:
   bundleIdPrefix: com.nashmei
+  objectVersion: 56
 settings:
   base:
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
