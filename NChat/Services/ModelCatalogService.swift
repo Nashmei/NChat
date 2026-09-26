@@ -14,14 +14,14 @@ private struct ModelsEnvelope:Decodable{let data:[NVIDIAListModel]}
  @Published var isLoading=false
  @Published var testedCount=0
  @Published var totalToTest=0
- @Published var error:String?
+ @Published var error:String?\n @Published private(set)var lastValidatedAt:Date?\n private var validationTask:Task<Void,Never>?
  private let catalogKey="nvidia-passed-models-v2"
  private let capabilityKey="nvidia-model-capabilities-v3"
  var passedModels:[NVIDIAListModel]{models.filter{capabilities[$0.id]?.passed==true}}
  var progress:Double{totalToTest==0 ? 0:Double(testedCount)/Double(totalToTest)}
  private init(){loadCache()}
 
- func refreshAndValidate()async {
+ func refreshAndValidate(force:Bool=false)async {\n  if isLoading{return}\n  if !force,let lastValidatedAt,Date().timeIntervalSince(lastValidatedAt)<60{return}
   let key=KeychainStore.read()
   guard !key.isEmpty else{models=[];capabilities=[:];error="Add your NVIDIA API key first.";return}
   isLoading=true;testedCount=0;error=nil
@@ -45,13 +45,13 @@ private struct ModelsEnvelope:Decodable{let data:[NVIDIAListModel]}
    }
    models=passed.sorted{$0.id<$1.id};capabilities=caps
    if !models.contains(where:{$0.id==AppSettings.defaultModel}),let first=models.first{UserDefaults.standard.set(first.id,forKey:"lastWorkingModel")}
-   persist();error=models.isEmpty ? "No chat models passed validation.":nil
+   lastValidatedAt = .now;persist();error=models.isEmpty ? "No chat models passed validation.":nil
   }catch{self.error=error.localizedDescription}
  }
 
- func refresh()async{await refreshAndValidate()}
+ func refresh()async{await refreshAndValidate(force:true)}
  func validate(_ model:NVIDIAListModel)async{let(_,cap)=await Self.test(model);capabilities[model.id]=cap;if cap.passed,!models.contains(model){models.append(model);models.sort{$0.id<$1.id}};persist()}
- func validateAll(limit:Int=999)async{await refreshAndValidate()}
+ func validateAll(limit:Int=999)async{await refreshAndValidate(force:true)}
 
  nonisolated private static func test(_ model:NVIDIAListModel)async->(NVIDIAListModel,ModelCapability){
   let start=Date()
