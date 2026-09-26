@@ -62,7 +62,7 @@ import SwiftData
      }
      activeAgent=nil
     }
-    for try await(chunk,_)in await service.stream(messages:api,modelID:selected,settings:settings,capability:selectedCapability){assistant.content+=chunk}\n    try ResponseQualityGuard.validate(assistant.content,expectedArabic:Self.containsArabic(text))
+    for try await(chunk,_)in await service.stream(messages:api,modelID:selected,settings:settings,capability:selectedCapability){assistant.content+=chunk}\n    try ResponseQualityGuard.validate(assistant.content,expectedArabic:Self.prefersArabic(text))
    }catch{
     if assistant.content.isEmpty{context.delete(assistant)}
     errorMessage=error.localizedDescription
@@ -87,5 +87,5 @@ import SwiftData
   guard let p=c.messages.sorted(by:{$0.createdAt<$1.createdAt}).last(where:{$0.role=="user"})else{return}
   draft=p.content;context.delete(p);send(in:c,context:context)
  }
- private static func containsArabic(_ text:String)->Bool{text.unicodeScalars.contains{(0x0600...0x06FF).contains($0.value) || (0x0750...0x077F).contains($0.value) || (0x08A0...0x08FF).contains($0.value)}}\n func stop(){task?.cancel();activeAgent=nil;isStreaming=false}
+ private static func prefersArabic(_ text:String)->Bool{var ar=0;var latin=0;for s in text.unicodeScalars{if (0x0600...0x06FF).contains(s.value) || (0x0750...0x077F).contains(s.value) || (0x08A0...0x08FF).contains(s.value){ar+=1}else if (0x0041...0x005A).contains(s.value) || (0x0061...0x007A).contains(s.value){latin+=1}};return ar>0 && ar>=latin}\n func stop(){task?.cancel();activeAgent=nil;isStreaming=false}
 }
