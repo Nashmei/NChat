@@ -7,7 +7,7 @@ struct ModelsView:View {
   ZStack{NChatTheme.background.ignoresSafeArea();List{
    Section{
     if catalog.isLoading{VStack(alignment:.leading,spacing:8){ProgressView(value:catalog.progress);Text("Testing \(catalog.testedCount) of \(catalog.totalToTest) NVIDIA models").font(.caption).foregroundStyle(.secondary)}}
-    Button{Task{await catalog.refreshAndValidate()}}label:{Label("Retest full catalog",systemImage:"arrow.clockwise")}
+    Button{Task{await catalog.refreshAndValidate(force:true)}}label:{Label("Retest full catalog",systemImage:"arrow.clockwise")}
    }
    Section("\(filtered.count) verified chat models"){
     ForEach(filtered){m in
