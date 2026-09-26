@@ -1,10 +1,8 @@
 name: Build NChat IPA
-
 on:
   workflow_dispatch:
   push:
-    branches: [main]
-
+    branches: ["**"]
 jobs:
   build:
     runs-on: macos-15
@@ -24,10 +22,8 @@ jobs:
           mkdir -p Payload
           cp -R DerivedData/Build/Products/Release-iphoneos/NChat.app Payload/
           zip -qry NChat-unsigned.ipa Payload
-      - name: Upload IPA
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: NChat-IPA
           path: NChat-unsigned.ipa
-          if-no-files-found: error
           retention-days: 30
