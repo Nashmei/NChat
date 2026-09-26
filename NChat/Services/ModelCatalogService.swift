@@ -14,14 +14,18 @@ private struct ModelsEnvelope:Decodable{let data:[NVIDIAListModel]}
  @Published var isLoading=false
  @Published var testedCount=0
  @Published var totalToTest=0
- @Published var error:String?\n @Published private(set)var lastValidatedAt:Date?\n private var validationTask:Task<Void,Never>?
+ @Published var error:String?
+ @Published private(set)var lastValidatedAt:Date?
+ private var validationTask:Task<Void,Never>?
  private let catalogKey="nvidia-passed-models-v2"
  private let capabilityKey="nvidia-model-capabilities-v4"
  var passedModels:[NVIDIAListModel]{models.filter{capabilities[$0.id]?.passed==true}}
  var progress:Double{totalToTest==0 ? 0:Double(testedCount)/Double(totalToTest)}
  private init(){loadCache()}
 
- func refreshAndValidate(force:Bool=false)async {\n  if isLoading{return}\n  if !force,let lastValidatedAt,Date().timeIntervalSince(lastValidatedAt)<60{return}
+ func refreshAndValidate(force:Bool=false)async {
+  if isLoading{return}
+  if !force,let lastValidatedAt,Date().timeIntervalSince(lastValidatedAt)<60{return}
   let key=KeychainStore.read()
   guard !key.isEmpty else{models=[];capabilities=[:];error="Add your NVIDIA API key first.";return}
   isLoading=true;testedCount=0;error=nil
@@ -44,7 +48,9 @@ private struct ModelsEnvelope:Decodable{let data:[NVIDIAListModel]}
     }
    }
    models=passed.sorted{$0.id<$1.id};capabilities=caps
-   let saved=UserDefaults.standard.string(forKey:"lastWorkingModel")\n   if let saved,!models.contains(where:{$0.id==saved}){UserDefaults.standard.removeObject(forKey:"lastWorkingModel")}\n   if UserDefaults.standard.string(forKey:"lastWorkingModel")==nil,let preferred=models.first(where:{$0.id==AppSettings.defaultModel}) ?? models.first{UserDefaults.standard.set(preferred.id,forKey:"lastWorkingModel")}
+   let saved=UserDefaults.standard.string(forKey:"lastWorkingModel")
+   if let saved,!models.contains(where:{$0.id==saved}){UserDefaults.standard.removeObject(forKey:"lastWorkingModel")}
+   if UserDefaults.standard.string(forKey:"lastWorkingModel")==nil,let preferred=models.first(where:{$0.id==AppSettings.defaultModel}) ?? models.first{UserDefaults.standard.set(preferred.id,forKey:"lastWorkingModel")}
    lastValidatedAt = .now;persist();error=models.isEmpty ? "No chat models passed validation.":nil
   }catch{self.error=error.localizedDescription}
  }
