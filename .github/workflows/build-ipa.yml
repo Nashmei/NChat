@@ -1,27 +1,82 @@
 name: Build NChat IPA
+
 on:
   workflow_dispatch:
+
 jobs:
   build:
+    name: Build NChat
     runs-on: macos-14
     timeout-minutes: 30
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          xcodebuild -version
+          swift --version
+
       - name: Install XcodeGen
-        run: brew install xcodegen
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen --version
+
       - name: Generate Xcode project
-        run: xcodegen generate
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodegen generate
+          test -d NChat.xcodeproj
+
       - name: Build unsigned device app
+        shell: bash
         run: |
+          set -euo pipefail
           set -o pipefail
-          xcodebuild -project NChat.xcodeproj -scheme NChat -configuration Release -sdk iphoneos -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build | xcpretty
+          rm -rf DerivedData
+          xcodebuild \
+            -project NChat.xcodeproj \
+            -scheme NChat \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build | tee xcodebuild.log
+
       - name: Package IPA
+        shell: bash
         run: |
+          set -euo pipefail
+          APP="DerivedData/Build/Products/Release-iphoneos/NChat.app"
+          test -d "$APP"
+          rm -rf Payload NChat-unsigned.ipa
           mkdir -p Payload
-          cp -R DerivedData/Build/Products/Release-iphoneos/NChat.app Payload/
+          cp -R "$APP" Payload/NChat.app
           zip -qry NChat-unsigned.ipa Payload
-      - uses: actions/upload-artifact@v4
+          ls -lh NChat-unsigned.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
         with:
           name: NChat-IPA
           path: NChat-unsigned.ipa
+          if-no-files-found: error
           retention-days: 30
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NChat-Build-Log
+          path: xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 7
