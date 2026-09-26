@@ -44,7 +44,7 @@ private struct ModelsEnvelope:Decodable{let data:[NVIDIAListModel]}
     }
    }
    models=passed.sorted{$0.id<$1.id};capabilities=caps
-   if !models.contains(where:{$0.id==AppSettings.defaultModel}),let first=models.first{UserDefaults.standard.set(first.id,forKey:"lastWorkingModel")}
+   let saved=UserDefaults.standard.string(forKey:"lastWorkingModel")\n   if let saved,!models.contains(where:{$0.id==saved}){UserDefaults.standard.removeObject(forKey:"lastWorkingModel")}\n   if UserDefaults.standard.string(forKey:"lastWorkingModel")==nil,let preferred=models.first(where:{$0.id==AppSettings.defaultModel}) ?? models.first{UserDefaults.standard.set(preferred.id,forKey:"lastWorkingModel")}
    lastValidatedAt = .now;persist();error=models.isEmpty ? "No chat models passed validation.":nil
   }catch{self.error=error.localizedDescription}
  }
