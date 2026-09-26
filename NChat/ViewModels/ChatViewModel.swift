@@ -21,7 +21,10 @@ import SwiftData
  func send(in c:Conversation,context:ModelContext){
   let pending=attachments
   var text=draft.trimmingCharacters(in:.whitespacesAndNewlines)
-  for a in pending where !a.isImage{if let t=a.text{text+="\n\n[File: \(a.name)]\n\(t)"}}
+  for a in pending where !a.isImage{if let t=a.text{text+="
+
+[File: \(a.name)]
+\(t)"}}
   guard !text.isEmpty || !pending.isEmpty,!isStreaming else{return}
   draft="";attachments=[]
 
@@ -43,7 +46,10 @@ import SwiftData
 
   var api=c.messages.sorted{$0.createdAt<$1.createdAt}.filter{$0.id != assistant.id}.map{APIMessage(role:$0.role,content:$0.content)}
   if let i=api.indices.last{api[i]=APIMessage(role:api[i].role,content:api[i].content,attachments:pending.filter{$0.isImage})}
-  let policy=c.systemPrompt.isEmpty ? AppSettings.defaultSystemPrompt : AppSettings.defaultSystemPrompt+"\n\nUSER CUSTOM INSTRUCTIONS:\n"+c.systemPrompt
+  let policy=c.systemPrompt.isEmpty ? AppSettings.defaultSystemPrompt : AppSettings.defaultSystemPrompt+"
+
+USER CUSTOM INSTRUCTIONS:
+"+c.systemPrompt
   api.insert(.init(role:"system",content:policy),at:0)
   api=ContextManager.trimmed(api,budget:c.contextBudget)
   isStreaming=true
@@ -55,14 +61,19 @@ import SwiftData
      activeAgent=agent.name
      if let agentCap=catalog.capabilities[agent.modelID] {
       do{
-       let agentPolicy=AppSettings.defaultSystemPrompt+"\n\nSPECIALIST ROLE:\n"+agent.instructions
+       let agentPolicy=AppSettings.defaultSystemPrompt+"
+
+SPECIALIST ROLE:
+"+agent.instructions
        let result=try await service.complete(messages:[.init(role:"system",content:agentPolicy),.init(role:"user",content:text,attachments:pending.filter{$0.isImage})],modelID:agent.modelID,settings:settings,capability:agentCap)
-       api.append(.init(role:"system",content:"A specialist named \(agent.name) supplied the following supporting result. Verify it and use only what is useful in the final answer:\n\(result)"))
+       api.append(.init(role:"system",content:"A specialist named \(agent.name) supplied the following supporting result. Verify it and use only what is useful in the final answer:
+\(result)"))
       }catch{ }
      }
      activeAgent=nil
     }
-    for try await(chunk,_)in await service.stream(messages:api,modelID:selected,settings:settings,capability:selectedCapability){assistant.content+=chunk}\n    try ResponseQualityGuard.validate(assistant.content,expectedArabic:Self.prefersArabic(text))
+    for try await(chunk,_)in await service.stream(messages:api,modelID:selected,settings:settings,capability:selectedCapability){assistant.content+=chunk}
+    try ResponseQualityGuard.validate(assistant.content,expectedArabic:Self.prefersArabic(text))
    }catch{
     if assistant.content.isEmpty || error is ResponseQualityGuard.QualityError {
      context.delete(assistant)
@@ -77,8 +88,15 @@ import SwiftData
   let active=config.agents.filter{$0.isEnabled && catalog.capabilities[$0.modelID]?.passed==true}
   guard !active.isEmpty else{return nil}
   let coordinator=(catalog.capabilities[config.coordinatorModelID]?.passed==true) ? config.coordinatorModelID : (catalog.passedModels.first?.id ?? config.coordinatorModelID)
-  let labels=active.map{"\($0.name): \($0.instructions)"}.joined(separator:"\n")
-  let prompt="Select at most one specialist for this request. Return only its exact name, or NONE.\n\nSPECIALISTS:\n\(labels)\n\nREQUEST:\n\(request)"
+  let labels=active.map{"\($0.name): \($0.instructions)"}.joined(separator:"
+")
+  let prompt="Select at most one specialist for this request. Return only its exact name, or NONE.
+
+SPECIALISTS:
+\(labels)
+
+REQUEST:
+\(request)"
   let answer=try await service.complete(messages:[.init(role:"system",content:"You route requests to specialists. Output one exact specialist name or NONE. No explanation."),.init(role:"user",content:prompt)],modelID:coordinator,settings:settings,capability:catalog.capabilities[coordinator])
   let clean=answer.trimmingCharacters(in:.whitespacesAndNewlines)
   return active.first{clean.caseInsensitiveCompare($0.name)==.orderedSame}
@@ -89,5 +107,6 @@ import SwiftData
   guard let p=c.messages.sorted(by:{$0.createdAt<$1.createdAt}).last(where:{$0.role=="user"})else{return}
   draft=p.content;context.delete(p);send(in:c,context:context)
  }
- private static func prefersArabic(_ text:String)->Bool{var ar=0;var latin=0;for s in text.unicodeScalars{if (0x0600...0x06FF).contains(s.value) || (0x0750...0x077F).contains(s.value) || (0x08A0...0x08FF).contains(s.value){ar+=1}else if (0x0041...0x005A).contains(s.value) || (0x0061...0x007A).contains(s.value){latin+=1}};return ar>0 && ar>=latin}\n func stop(){task?.cancel();activeAgent=nil;isStreaming=false}
+ private static func prefersArabic(_ text:String)->Bool{var ar=0;var latin=0;for s in text.unicodeScalars{if (0x0600...0x06FF).contains(s.value) || (0x0750...0x077F).contains(s.value) || (0x08A0...0x08FF).contains(s.value){ar+=1}else if (0x0041...0x005A).contains(s.value) || (0x0061...0x007A).contains(s.value){latin+=1}};return ar>0 && ar>=latin}
+ func stop(){task?.cancel();activeAgent=nil;isStreaming=false}
 }
