@@ -106,7 +106,7 @@ struct RootView:View {
    Text(KeychainStore.read().isEmpty ? "Connect NVIDIA":"Start your first chat").font(.headline).foregroundStyle(.white)
    Text(KeychainStore.read().isEmpty ? "Add your NVIDIA API key to discover and verify available models.":"Your verified models are ready.")
     .font(.caption).foregroundStyle(NChatTheme.secondary).multilineTextAlignment(.center).padding(.horizontal,28)
-   Button(KeychainStore.read().isEmpty ? "Open Settings":"New Chat"){KeychainStore.read().isEmpty ? (showSettings=true):newChat()}
+   Button(KeychainStore.read().isEmpty ? "Open Settings":"New Chat"){if KeychainStore.read().isEmpty{showSettings=true}else{newChat()}}
     .buttonStyle(.borderedProminent).tint(NChatTheme.purple)
    Spacer()
   }
