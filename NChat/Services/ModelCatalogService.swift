@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 struct NVIDIAListModel:Codable,Identifiable,Hashable {
  let id:String
