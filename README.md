@@ -1,36 +1,48 @@
 # NChat 2.0
 
-Native SwiftUI AI client for NVIDIA NIM on iPhone.
+Native SwiftUI AI workspace for NVIDIA NIM on iPhone.
 
-## Highlights
+## Core experience
 - NVIDIA API key stored in iOS Keychain
-- Full NVIDIA model catalog discovery
-- Automatic model validation after saving a key and whenever the app becomes active
-- Only verified chat models appear in the picker
-- Arabic + Latin Unicode quality probe, streaming check and latency measurement
-- Capability profiles for Text, Vision, Reasoning, Tools and Arabic
-- Capability-aware request payloads
-- Native streaming chat with Stop and Regenerate
-- Raw internal reasoning is not rendered in chat
-- Built-in language policy: reply in the language of the latest user message
-- Local-first SwiftData conversations, search, pin, rename, delete and export
-- Image/file attachments with Vision-model validation
-- Main responsible model + configurable specialist Agents
-- Agent failures fall back to the main model
-- Markdown and copyable code blocks
-- Context budget and advanced generation controls
-- Dark violet NChat visual system with an original NChat identity
+- NVIDIA catalog discovery and validation once per app launch
+- Manual full-catalog retest after key changes or on demand
+- Only models that pass NChat's chat-quality probe appear in chat/model pickers
+- Streaming responses with Stop and Regenerate
+- Built-in Arabic, RTL, Unicode and same-language response policy
+- Raw internal reasoning is never rendered in chat
+- Final-response quality guard rejects corrupted Unicode and clear language-policy failures
+- Local-first SwiftData conversations with search, pin, rename, delete and Markdown export
+- Image attachments for Vision-capable model families and UTF-8 text/JSON/CSV attachments
+- Responsible model plus configurable specialist agents
+- Agent failure never blocks the main model response
+- Markdown, selectable text and copyable LTR code blocks
+- Context budgeting and generation controls
+- Original dark violet NChat visual system
 
-## Architecture
-SwiftUI + SwiftData + async/await + URLSession SSE + Keychain.
+## Model verification
+A model is listed as verified only after it successfully completes NChat's text/streaming Arabic + Latin quality probe.
 
-Core layers: NVIDIAService for NVIDIA transport, ModelCatalogStore for discovery and validation, ChatViewModel for orchestration and fallback, and NChatTheme for the visual system.
+Text, streaming and Arabic compatibility are directly exercised by the probe. Capability badges marked with * (Vision, Reasoning, Tools) are currently inferred from model-family metadata/name patterns and are intentionally presented as inferred rather than as a completed functional capability test.
 
 ## Privacy
-API keys are not committed or stored in chat history. They are saved in Keychain. Conversations are local-first.
+- API keys are stored with iOS Keychain and are never written to chat history.
+- Conversations are stored locally with SwiftData.
+- Conversation content and selected attachments are sent to NVIDIA only when the user sends a request.
+- Custom system instructions are not included in exported chat Markdown.
+
+## Architecture
+SwiftUI + SwiftData + async/await + URLSession SSE + Security/Keychain.
+
+Key layers:
+- `NVIDIAService`: NVIDIA transport and streaming
+- `ModelCatalogStore`: discovery, validation and cached availability
+- `ChatViewModel`: chat orchestration, agents and quality enforcement
+- `ContextManager`: bounded conversation context
+- `ResponseQualityGuard`: Unicode/language output validation
+- `NChatTheme`: shared visual design system
 
 ## Version
 NChat 2.0.0 (Build 20)
 
-## Build
-The GitHub workflow is manual-only. Use Actions > Build NChat IPA > Run workflow when an IPA is wanted. Pushes do not trigger builds.
+## IPA workflow
+The GitHub Actions workflow is manual-only. Repository pushes do not trigger a build. Run the workflow explicitly only when an IPA is wanted.
