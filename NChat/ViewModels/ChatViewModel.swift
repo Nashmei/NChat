@@ -64,7 +64,9 @@ import SwiftData
     }
     for try await(chunk,_)in await service.stream(messages:api,modelID:selected,settings:settings,capability:selectedCapability){assistant.content+=chunk}\n    try ResponseQualityGuard.validate(assistant.content,expectedArabic:Self.prefersArabic(text))
    }catch{
-    if assistant.content.isEmpty{context.delete(assistant)}
+    if assistant.content.isEmpty || error is ResponseQualityGuard.QualityError {
+     context.delete(assistant)
+    }
     errorMessage=error.localizedDescription
    }
    activeAgent=nil;isStreaming=false;try? context.save()
