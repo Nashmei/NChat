@@ -1,8 +1,6 @@
 name: Build NChat IPA
 on:
   workflow_dispatch:
-  push:
-    branches: ["**"]
 jobs:
   build:
     runs-on: macos-15
