@@ -32,36 +32,13 @@ struct CommandCenterView: View {
                 Text("BATTLE MODE").font(.caption.bold()).foregroundStyle(.secondary)
                 ForEach(GameMode.allCases) { mode in
                     Button {
-                        game.selectedMode = mode
-                        FeedbackService.shared.selection()
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(mode.rawValue).font(.headline)
-                                Text(mode.subtitle).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Image(systemName: game.selectedMode == mode ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(game.selectedMode == mode ? PWTheme.cyan : .secondary)
-                        }
-                    }.buttonStyle(.plain)
-                    if mode != GameMode.allCases.last { Divider() }
-                }
-                Button {
-                    Task {
-                        if game.selectedMode == .training {
-                            game.resetBattle(); game.startBattle(); onBattle()
-                        } else {
-                            await game.startMatchmaking()
-                            if game.statusMessage.lowercased().contains("matched") { onBattle() }
-                        }
-                    }
+                    game.startSelectedMode()
+                    onBattle()
                 } label: {
-                    HStack {
-                        if game.matchmaking.searching { ProgressView().tint(.white) }
-                        Text(game.selectedMode == .training ? "START TRAINING" : "FIND OPPONENT")
-                            .font(.headline)
-                    }.frame(maxWidth: .infinity).padding(.vertical, 10)
+                    Text("START \(game.selectedMode.rawValue.uppercased())")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
                 }
                 .buttonStyle(.borderedProminent).tint(PWTheme.accent)
             }
@@ -90,7 +67,7 @@ struct CommandCenterView: View {
     private var leaderboard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 10) {
-                Text("LEADERBOARD").font(.caption.bold()).foregroundStyle(.secondary)
+                Text("LOCAL COMMAND RANKING").font(.caption.bold()).foregroundStyle(.secondary)
                 ForEach(Array(game.leaderboard().enumerated()), id: \.element.id) { index, entry in
                     HStack {
                         Text("#\(index + 1)").font(.caption.bold()).foregroundStyle(.secondary).frame(width: 28)
