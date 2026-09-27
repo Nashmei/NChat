@@ -5,7 +5,7 @@ Prompt Wars is a native iOS tactical command game built with SwiftUI. Players is
 ## Current game
 - Native iOS 17+ SwiftUI interface
 - Onboarding and futuristic visual system
-- Training, Ranked and Blitz modes
+- Campaign, Skirmish and Blitz offline modes
 - Three-lane tactical battle engine
 - Vanguard, Ranger, Guardian and Striker units
 - Balanced, Assault, Defend, Flank and Ambush tactics
@@ -35,10 +35,7 @@ Expected tactical response:
 }
 ```
 
-## Online backend contract
-Ranked and Blitz are designed for a server-authoritative backend. The client currently defines `POST /v1/matchmaking` and expects a match ticket. Training remains fully local and playable without a backend.
-
-## Open-source / asset policy
+## Offline architecture\nAll game modes, progression, missions, loadouts, enemy tactics, battle resolution and local rankings run on-device. No account, matchmaking or PvP backend is required. NVIDIA tactical AI remains optional and the game falls back to its local command interpreter when it is disabled or unavailable.\n\n## Open-source / asset policy
 The current runtime target uses Apple frameworks only: SwiftUI, Foundation, Combine, UIKit and AVFoundation.
 
 For future external art, the approved direction is Kenney's CC0 packs (including UI Pack - Sci-Fi, Game Icons and Sci-Fi RTS). Their asset pages identify the packs as CC0 and Kenney states commercial use is allowed and attribution is not required. No Kenney binary asset is currently bundled, so the repository does not carry unused third-party art.
@@ -65,4 +62,4 @@ Pushing commits does not automatically start an IPA build.
 - `NChat/Game/OnboardingView.swift` — first-run experience
 
 ## Release status
-The local game and production UI are implemented. A real global PvP service, account service, anti-cheat, remote leaderboard persistence, push notifications, analytics, App Store signing and production NVIDIA proxy require deployed external infrastructure and credentials; they cannot be made real solely by client-side Swift code.
+The game is intentionally offline-first and has no PvP, matchmaking, accounts, or remote leaderboard requirement. App Store signing still requires Apple distribution credentials. NVIDIA tactical AI is optional; enabling it requires network access to a secure proxy, while all core gameplay remains available locally.
