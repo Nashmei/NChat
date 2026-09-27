@@ -80,19 +80,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APP="DerivedData/Build/Products/Release-iphoneos/NChat.app"
+          APP="DerivedData/Build/Products/Release-iphoneos/Prompt Wars.app"
           test -d "$APP"
-          rm -rf Payload NChat-unsigned.ipa
+          rm -rf Payload PromptWars-unsigned.ipa
           mkdir -p Payload
-          cp -R "$APP" Payload/NChat.app
-          zip -qry NChat-unsigned.ipa Payload
-          ls -lh NChat-unsigned.ipa
+          cp -R "$APP" "Payload/Prompt Wars.app"
+          zip -qry PromptWars-unsigned.ipa Payload
+          ls -lh PromptWars-unsigned.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: NChat-IPA
-          path: NChat-unsigned.ipa
+          name: PromptWars-IPA
+          path: PromptWars-unsigned.ipa
           if-no-files-found: error
           retention-days: 30
 
