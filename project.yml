@@ -13,6 +13,8 @@ targets:
     sources:
       - path: NChat/App/NChatApp.swift
       - path: NChat/Game
+        excludes:
+          - OnlineService.swift
       - path: NChat/Assets.xcassets
         buildPhase: resources
     settings:
