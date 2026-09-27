@@ -98,9 +98,9 @@ struct LevelIntroView: View {
                         Divider()
                         Text("اختر المعززات").font(.headline.bold()).foregroundStyle(RoyalTheme.navy)
                         HStack(spacing: 12) {
-                            booster(icon: "burst.fill", title: "قنبلة", selected: $game.preBomb, tint: .purple)
-                            booster(icon: "arrow.left.and.right.circle.fill", title: "صاروخ", selected: $game.preRocket, tint: .red)
-                            booster(icon: "sparkles", title: "كرة الألوان", selected: $game.preRainbow, tint: .blue)
+                            booster(icon: "burst.fill", title: "قنبلة", count: game.save.bombs, selected: $game.preBomb, tint: .purple)
+                            booster(icon: "arrow.left.and.right.circle.fill", title: "صاروخ", count: game.save.rockets, selected: $game.preRocket, tint: .red)
+                            booster(icon: "sparkles", title: "كرة الألوان", count: game.save.rainbows, selected: $game.preRainbow, tint: .blue)
                         }
                         RoyalButton(title: "ابدأ", icon: "play.fill") { game.beginSelectedLevel() }
                     }
@@ -111,8 +111,8 @@ struct LevelIntroView: View {
         }
     }
 
-    private func booster(icon: String, title: String, selected: Binding<Bool>, tint: Color) -> some View {
-        Button { selected.wrappedValue.toggle() } label: {
+    private func booster(icon: String, title: String, count: Int, selected: Binding<Bool>, tint: Color) -> some View {
+        Button { if count > 0 { selected.wrappedValue.toggle() } } label: {
             VStack(spacing: 6) {
                 ZStack {
                     Circle().fill(tint.gradient).frame(width: 58, height: 58)
@@ -124,9 +124,10 @@ struct LevelIntroView: View {
                     }
                 }
                 Text(title).font(.caption2.bold()).foregroundStyle(RoyalTheme.navy)
+                Text("×\(count)").font(.caption2.bold()).foregroundStyle(count > 0 ? .green : .red)
             }
             .frame(maxWidth: .infinity)
-        }.buttonStyle(.plain)
+        }.buttonStyle(.plain).opacity(count > 0 ? 1 : 0.45).disabled(count == 0)
     }
 }
 
