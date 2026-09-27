@@ -19,6 +19,15 @@ final class GameStore: ObservableObject {
     @Published var proxyURL = ""
     @Published var statusMessage = "Ready"
 
+    @Published var selectedMode: GameMode = .training
+    @Published var missions: [DailyMission] = DailyMission.defaults
+    @Published var loadout = Loadout()
+    @Published var matchmaking = MatchmakingState()
+    @Published var online = OnlineConfiguration()
+    @Published var soundEnabled = true
+    @Published var hapticsEnabled = true
+    @Published var language: AppLanguage = .system
+
     private let progressKey = "promptwars.progress"
 
     init() {
@@ -36,12 +45,11 @@ final class GameStore: ObservableObject {
         events = []
         playerPlan = .balanced
         enemyPlan = .balanced
-        playerUnits = [
-            BattleUnit(kind: .vanguard, lane: 0),
-            BattleUnit(kind: .ranger, lane: 1),
-            BattleUnit(kind: .guardian, lane: 1),
-            BattleUnit(kind: .striker, lane: 2)
-        ]
+
+        playerUnits = loadout.units.enumerated().map { index, kind in
+            let lane = index == 0 ? 0 : (index == loadout.units.count - 1 ? 2 : 1)
+            return BattleUnit(kind: kind, lane: lane)
+        }
         enemyUnits = [
             BattleUnit(kind: .guardian, lane: 0),
             BattleUnit(kind: .ranger, lane: 1),
@@ -54,6 +62,7 @@ final class GameStore: ObservableObject {
     func startBattle() {
         phase = .planning
         events.append(BattleEvent(round: 0, text: "Battle link established. Issue your first command.", isPositive: true))
+        if hapticsEnabled { FeedbackService.shared.impact(.light) }
     }
 
     func applyPreset(_ tactic: Tactic) {
@@ -61,16 +70,27 @@ final class GameStore: ObservableObject {
         playerPlan.aggression = tactic == .assault ? 0.9 : tactic == .defend ? 0.3 : 0.6
         playerPlan.holdPosition = tactic == .defend || tactic == .ambush
         playerPlan.summary = tactic.rawValue
+        if hapticsEnabled { FeedbackService.shared.selection() }
     }
 
     func interpretLocally(_ text: String) -> TacticalPlan {
         let value = text.lowercased()
         var plan = playerPlan
-        if value.contains("هجوم") || value.contains("attack") || value.contains("اندفع") { plan.tactic = .assault; plan.aggression = 0.9 }
-        if value.contains("دفاع") || value.contains("defend") || value.contains("تراجع") { plan.tactic = .defend; plan.aggression = 0.3; plan.holdPosition = true }
-        if value.contains("يمين") || value.contains("right") { plan.tactic = .flank; plan.focusLane = 2 }
-        if value.contains("يسار") || value.contains("left") { plan.tactic = .flank; plan.focusLane = 0 }
-        if value.contains("كمين") || value.contains("ambush") { plan.tactic = .ambush; plan.holdPosition = true }
+        if value.contains("هجوم") || value.contains("attack") || value.contains("اندفع") {
+            plan.tactic = .assault; plan.aggression = 0.9
+        }
+        if value.contains("دفاع") || value.contains("defend") || value.contains("تراجع") {
+            plan.tactic = .defend; plan.aggression = 0.3; plan.holdPosition = true
+        }
+        if value.contains("يمين") || value.contains("right") {
+            plan.tactic = .flank; plan.focusLane = 2
+        }
+        if value.contains("يسار") || value.contains("left") {
+            plan.tactic = .flank; plan.focusLane = 0
+        }
+        if value.contains("كمين") || value.contains("ambush") {
+            plan.tactic = .ambush; plan.holdPosition = true
+        }
         plan.summary = text.isEmpty ? plan.tactic.rawValue : text
         return plan
     }
@@ -80,7 +100,8 @@ final class GameStore: ObservableObject {
         phase = .resolving
         energy -= 20
 
-        if isAIEnabled, let url = URL(string: proxyURL), !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if isAIEnabled, let url = URL(string: proxyURL),
+           !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             do {
                 playerPlan = try await TacticalAIService.interpret(command: command, endpoint: url)
                 statusMessage = "AI plan accepted"
@@ -95,7 +116,7 @@ final class GameStore: ObservableObject {
         enemyPlan = makeEnemyPlan()
         resolveRound()
         command = ""
-        try? await Task.sleep(for: .milliseconds(650))
+        try? await Task.sleep(for: .milliseconds(500))
 
         if playerCore <= 0 {
             finish(win: false)
@@ -103,9 +124,41 @@ final class GameStore: ObservableObject {
             finish(win: true)
         } else {
             round += 1
-            energy = min(100, energy + 35)
+            energy = min(100, energy + (selectedMode == .blitz ? 55 : 35))
             phase = .planning
         }
+    }
+
+    func startMatchmaking() async {
+        guard selectedMode != .training else {
+            resetBattle()
+            startBattle()
+            return
+        }
+        matchmaking.searching = true
+        statusMessage = "Searching for opponent…"
+        do {
+            let ticket = try await OnlineService.shared.requestMatch(
+                baseURL: online.backendURL,
+                token: online.playerToken,
+                rating: progress.rating,
+                mode: selectedMode
+            )
+            statusMessage = ticket.status
+        } catch {
+            statusMessage = error.localizedDescription
+        }
+        matchmaking.searching = false
+    }
+
+    func leaderboard() -> [LeaderboardEntry] {
+        [
+            LeaderboardEntry(name: "NOVA", rating: 1428, wins: 81, isPlayer: false),
+            LeaderboardEntry(name: "VECTOR", rating: 1310, wins: 64, isPlayer: false),
+            LeaderboardEntry(name: "GHOST", rating: 1184, wins: 49, isPlayer: false),
+            LeaderboardEntry(name: "COMMANDER", rating: progress.rating, wins: progress.wins, isPlayer: true),
+            LeaderboardEntry(name: "ION", rating: 940, wins: 31, isPlayer: false)
+        ].sorted { $0.rating > $1.rating }
     }
 
     private func makeEnemyPlan() -> TacticalPlan {
@@ -113,14 +166,19 @@ final class GameStore: ObservableObject {
         if playerCore < 35 { tactic = .assault }
         else if enemyCore < 40 { tactic = .defend }
         else { tactic = Tactic.allCases.randomElement() ?? .balanced }
-        return TacticalPlan(tactic: tactic, focusLane: Int.random(in: 0...2), aggression: tactic == .assault ? 0.85 : 0.55, holdPosition: tactic == .defend, summary: "Enemy \\(tactic.rawValue)")
+        return TacticalPlan(
+            tactic: tactic,
+            focusLane: Int.random(in: 0...2),
+            aggression: tactic == .assault ? 0.85 : 0.55,
+            holdPosition: tactic == .defend,
+            summary: "Enemy \(tactic.rawValue)"
+        )
     }
 
     private func resolveRound() {
         let playerScore = combatScore(plan: playerPlan, units: playerUnits)
         let enemyScore = combatScore(plan: enemyPlan, units: enemyUnits)
         let advantage = matchup(playerPlan.tactic, enemyPlan.tactic)
-
         let damageToEnemy = max(5, Int(Double(playerScore) * 0.12) + advantage + Int.random(in: 0...8))
         let damageToPlayer = max(4, Int(Double(enemyScore) * 0.11) - advantage / 2 + Int.random(in: 0...7))
 
@@ -129,11 +187,17 @@ final class GameStore: ObservableObject {
         damageUnits(&enemyUnits, amount: max(4, damageToEnemy / 2), lane: playerPlan.focusLane)
         damageUnits(&playerUnits, amount: max(4, damageToPlayer / 2), lane: enemyPlan.focusLane)
 
+        if playerPlan.tactic == .flank {
+            incrementMission("flank2")
+        }
+
         events.insert(BattleEvent(
             round: round,
-            text: "R\\(round) • \\(playerPlan.tactic.rawValue) vs \\(enemyPlan.tactic.rawValue) • Enemy -\\(damageToEnemy) / You -\\(damageToPlayer)",
+            text: "R\(round) • \(playerPlan.tactic.rawValue) vs \(enemyPlan.tactic.rawValue) • Enemy -\(damageToEnemy) / You -\(damageToPlayer)",
             isPositive: damageToEnemy >= damageToPlayer
         ), at: 0)
+
+        if hapticsEnabled { FeedbackService.shared.impact(damageToEnemy >= damageToPlayer ? .medium : .light) }
     }
 
     private func combatScore(plan: TacticalPlan, units: [BattleUnit]) -> Int {
@@ -153,16 +217,27 @@ final class GameStore: ObservableObject {
     }
 
     private func damageUnits(_ units: inout [BattleUnit], amount: Int, lane: Int) {
-        guard let index = units.indices.filter({ units[$0].alive && units[$0].lane == lane }).randomElement()
-                ?? units.indices.filter({ units[$0].alive }).randomElement() else { return }
+        let focused = units.indices.filter { units[$0].alive && units[$0].lane == lane }
+        let alive = units.indices.filter { units[$0].alive }
+        guard let index = focused.randomElement() ?? alive.randomElement() else { return }
         units[index].health = max(0, units[index].health - amount)
     }
 
     private func finish(win: Bool) {
         phase = win ? .victory : .defeat
-        progress.record(win: win)
+        if selectedMode != .training {
+            progress.record(win: win)
+        }
+        incrementMission("battle3")
+        if win { incrementMission("win1") }
         saveProgress()
+        if hapticsEnabled { FeedbackService.shared.notification(win ? .success : .error) }
         statusMessage = win ? "Victory" : "Defeat"
+    }
+
+    private func incrementMission(_ id: String) {
+        guard let index = missions.firstIndex(where: { $0.id == id }) else { return }
+        missions[index].progress = min(missions[index].target, missions[index].progress + 1)
     }
 
     private func saveProgress() {
