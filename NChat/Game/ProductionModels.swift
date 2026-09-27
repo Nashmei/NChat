@@ -1,15 +1,15 @@
 import Foundation
 
 enum GameMode: String, CaseIterable, Identifiable, Codable {
-    case training = "Training"
-    case ranked = "Ranked"
+    case campaign = "Campaign"
+    case skirmish = "Skirmish"
     case blitz = "Blitz"
     var id: String { rawValue }
     var subtitle: String {
         switch self {
-        case .training: return "Practice tactics without rating pressure."
-        case .ranked: return "Competitive command battle."
-        case .blitz: return "Fast rounds with aggressive energy recovery."
+        case .campaign: return "Progress through increasingly difficult AI sectors."
+        case .skirmish: return "Classic offline battle against the tactical AI."
+        case .blitz: return "Fast offline rounds with rapid energy recovery."
         }
     }
 }
@@ -40,18 +40,6 @@ struct LeaderboardEntry: Identifiable, Hashable {
 struct Loadout: Codable, Hashable {
     var name = "Alpha"
     var units: [UnitKind] = [.vanguard, .ranger, .guardian, .striker]
-}
-
-struct MatchmakingState: Equatable {
-    var searching = false
-    var elapsed = 0
-    var region = "Auto"
-    var estimatedPing = 0
-}
-
-struct OnlineConfiguration: Codable {
-    var backendURL = ""
-    var playerToken = ""
 }
 
 enum AppLanguage: String, CaseIterable, Identifiable {
