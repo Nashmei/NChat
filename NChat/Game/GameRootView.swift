@@ -608,42 +608,112 @@ struct CrownGemShape: Shape {
 struct ResultCard: View {
     @EnvironmentObject var game: CrownStore
     let win: Bool
+    @State private var celebrate = false
+
+    private var stars: Int { game.save.completed[game.level.id] ?? 1 }
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.60).ignoresSafeArea()
-            VStack(spacing: 18) {
-                Image(systemName: win ? "crown.fill" : "heart.slash.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(win ? .yellow : .pink)
+            Color.black.opacity(0.68).ignoresSafeArea()
 
-                Text(win ? "SPECTACULAR!" : "SO CLOSE!")
-                    .font(.system(.largeTitle, design: .rounded, weight: .black))
+            if win {
+                ForEach(0..<16, id: \.self) { i in
+                    Image(systemName: i.isMultiple(of: 3) ? "star.fill" : "sparkles")
+                        .foregroundStyle(i.isMultiple(of: 2) ? .yellow : .white)
+                        .font(.system(size: CGFloat(12 + (i % 4) * 5)))
+                        .offset(
+                            x: celebrate ? CGFloat((i % 5) * 72 - 145) : 0,
+                            y: celebrate ? CGFloat((i % 4) * 95 - 180) : 0
+                        )
+                        .opacity(celebrate ? 0.9 : 0)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.62).delay(Double(i) * 0.025), value: celebrate)
+                }
+            }
 
-                Text(win ? "The garden shines brighter." : "Try a new strategy and come back stronger.")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+            VStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [win ? .yellow : .pink, .clear],
+                                center: .center,
+                                startRadius: 5,
+                                endRadius: 72
+                            )
+                        )
+                        .frame(width: 145, height: 145)
+                    Image(systemName: win ? "crown.fill" : "heart.slash.fill")
+                        .font(.system(size: 70, weight: .black))
+                        .foregroundStyle(win ? .yellow : .pink)
+                        .scaleEffect(celebrate ? 1.08 : 0.75)
+                        .rotationEffect(.degrees(celebrate && win ? -5 : 0))
+                }
+
+                Text(win ? "رائع!" : "كانت قريبة!")
+                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .foregroundStyle(win ? RoyalTheme.navy : .pink)
+
+                Text(win ? "اكتمل المستوى \(game.level.id)" : "جرّب استراتيجية مختلفة")
+                    .font(.headline.bold())
+                    .foregroundStyle(.gray)
 
                 if win {
-                    HStack {
-                        ForEach(0..<(game.save.completed[game.level.id] ?? 1), id: \.self) { _ in
-                            Image(systemName: "star.fill").font(.title).foregroundStyle(.yellow)
+                    HStack(spacing: 8) {
+                        ForEach(0..<3, id: \.self) { index in
+                            Image(systemName: index < stars ? "star.fill" : "star")
+                                .font(.system(size: 38, weight: .bold))
+                                .foregroundStyle(index < stars ? .yellow : .gray.opacity(0.4))
+                                .scaleEffect(celebrate ? 1 : 0.3)
+                                .animation(.spring(response: 0.45).delay(Double(index) * 0.12), value: celebrate)
                         }
                     }
+
+                    HStack(spacing: 20) {
+                        reward(icon: "circle.fill", value: "+\(50 + stars * 25)", label: "عملات", color: .orange)
+                        reward(icon: "star.circle.fill", value: "+\(stars)", label: "تجديد", color: .purple)
+                    }
+                    .padding(.vertical, 4)
                 }
 
-                Button(win ? "NEXT LEVEL" : "TRY AGAIN") {
+                RoyalButton(title: win ? "المستوى التالي" : "حاول مجددًا", icon: win ? "play.fill" : "arrow.clockwise") {
                     if win { game.next() } else { game.start(game.level.id) }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .tint(win ? .green : .pink)
 
-                Button("MAP") { game.map() }.buttonStyle(.bordered)
+                if win {
+                    Button {
+                        game.state = .map
+                        game.screen = .renovation
+                    } label: {
+                        Label("تجديد الحديقة", systemImage: "hammer.fill")
+                            .font(.headline.bold())
+                            .foregroundStyle(RoyalTheme.navy)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Button("العودة للخريطة") { game.map() }
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.gray)
             }
-            .padding(28)
-            .frame(maxWidth: 340)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 30))
+            .padding(26)
+            .frame(maxWidth: 350)
+            .background(
+                RoundedRectangle(cornerRadius: 30)
+                    .fill(LinearGradient(colors: [RoyalTheme.cream, .white], startPoint: .top, endPoint: .bottom))
+                    .overlay(RoundedRectangle(cornerRadius: 30).stroke(RoyalTheme.gold, lineWidth: 4))
+                    .shadow(color: .black.opacity(0.45), radius: 18, y: 8)
+            )
+            .padding(18)
         }
+        .onAppear { celebrate = true }
+    }
+
+    private func reward(icon: String, value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon).font(.title2).foregroundStyle(color)
+            Text(value).font(.title3.bold()).foregroundStyle(RoyalTheme.navy)
+            Text(label).font(.caption2.bold()).foregroundStyle(.gray)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
