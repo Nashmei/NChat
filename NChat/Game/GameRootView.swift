@@ -16,6 +16,8 @@ struct GameRootView: View {
             .ignoresSafeArea()
 
             switch game.state {
+            case .levelIntro:
+                LevelIntroView().environmentObject(game)
             case .playing, .won, .lost:
                 PlayView().environmentObject(game)
             case .map:
@@ -45,6 +47,86 @@ struct GameRootView: View {
         } message: {
             Text("100 coins were added to your treasury.")
         }
+    }
+}
+
+struct LevelIntroView: View {
+    @EnvironmentObject var game: CrownStore
+
+    var body: some View {
+        ZStack {
+            RoyalWorldBackground()
+            Color.black.opacity(0.20).ignoresSafeArea()
+            VStack {
+                HStack {
+                    Button { game.map() } label: {
+                        Image(systemName: "xmark").font(.title2.bold()).foregroundStyle(.white)
+                            .frame(width: 46, height: 46).background(RoyalTheme.navy, in: Circle())
+                            .overlay(Circle().stroke(RoyalTheme.gold, lineWidth: 3))
+                    }
+                    Spacer()
+                    CurrencyChip(icon: "heart.fill", value: "\(game.save.lives)", tint: .red)
+                }.padding()
+
+                Spacer()
+
+                RoyalPanel {
+                    VStack(spacing: 16) {
+                        RoyalHeader(title: "المستوى \(game.level.id)")
+                        HStack {
+                            VStack {
+                                Text("الهدف").font(.caption.bold()).foregroundStyle(.gray)
+                                HStack(spacing: 12) {
+                                    ForEach(Array(game.level.targets.keys), id: \.self) { kind in
+                                        VStack {
+                                            ZStack {
+                                                Circle().fill(kind.color.gradient).frame(width: 48, height: 48)
+                                                Image(systemName: kind.symbol).foregroundStyle(.white).font(.title3.bold())
+                                            }
+                                            Text("\(game.level.targets[kind] ?? 0)").font(.headline.bold()).foregroundStyle(RoyalTheme.navy)
+                                        }
+                                    }
+                                }
+                            }
+                            Spacer()
+                            VStack {
+                                Text("الحركات").font(.caption.bold()).foregroundStyle(.gray)
+                                Text("\(game.level.moves)").font(.system(size: 34, weight: .black, design: .rounded)).foregroundStyle(RoyalTheme.navy)
+                            }
+                        }
+
+                        Divider()
+                        Text("اختر المعززات").font(.headline.bold()).foregroundStyle(RoyalTheme.navy)
+                        HStack(spacing: 12) {
+                            booster(icon: "burst.fill", title: "قنبلة", selected: $game.preBomb, tint: .purple)
+                            booster(icon: "arrow.left.and.right.circle.fill", title: "صاروخ", selected: $game.preRocket, tint: .red)
+                            booster(icon: "sparkles", title: "كرة الألوان", selected: $game.preRainbow, tint: .blue)
+                        }
+                        RoyalButton(title: "ابدأ", icon: "play.fill") { game.beginSelectedLevel() }
+                    }
+                }
+                .padding(20)
+                Spacer()
+            }
+        }
+    }
+
+    private func booster(icon: String, title: String, selected: Binding<Bool>, tint: Color) -> some View {
+        Button { selected.wrappedValue.toggle() } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle().fill(tint.gradient).frame(width: 58, height: 58)
+                    Image(systemName: icon).font(.title2.bold()).foregroundStyle(.white)
+                    if selected.wrappedValue {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green).background(.white, in: Circle())
+                            .offset(x: 23, y: -23)
+                    }
+                }
+                Text(title).font(.caption2.bold()).foregroundStyle(RoyalTheme.navy)
+            }
+            .frame(maxWidth: .infinity)
+        }.buttonStyle(.plain)
     }
 }
 
@@ -120,7 +202,7 @@ struct MapView: View {
         let stars = game.save.completed[number] ?? 0
         let offset = sin(Double(number) * 1.42) * Double(min(width * 0.25, 95))
         return Button {
-            if open && game.save.lives > 0 { game.start(number) }
+            if open && game.save.lives > 0 { game.selectLevel(number) }
         } label: {
             VStack(spacing: 3) {
                 ZStack {
