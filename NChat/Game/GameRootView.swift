@@ -35,68 +35,179 @@ struct MapView: View {
     @EnvironmentObject var game: CrownStore
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 18) {
-                VStack(spacing: 4) {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 58))
-                        .foregroundStyle(.yellow)
-                    Text("CROWN GARDENS")
-                        .font(.system(size: 34, weight: .black, design: .rounded))
-                    Text("Restore the enchanted royal gardens")
-                        .foregroundStyle(.white.opacity(0.75))
-                }
-                .padding(.top, 22)
+        GeometryReader { geo in
+            ZStack {
+                RoyalWorldBackground()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        title
+                        stats
+                            .padding(.bottom, 20)
 
-                HStack {
-                    StatPill(icon: "heart.fill", value: "\(game.save.lives)", color: .pink)
-                    StatPill(icon: "star.fill", value: "\(game.save.stars)", color: .yellow)
-                    StatPill(icon: "circle.fill", value: "\(game.save.coins)", color: .orange)
-                }
+                        ZStack {
+                            RoyalPath()
+                                .stroke(
+                                    LinearGradient(colors: [.yellow.opacity(0.85), .orange], startPoint: .top, endPoint: .bottom),
+                                    style: StrokeStyle(lineWidth: 12, lineCap: .round, dash: [4, 18])
+                                )
+                                .frame(height: 1500)
+                                .padding(.horizontal, 70)
 
-                LazyVStack(spacing: 12) {
-                    ForEach(1...30, id: \.self) { number in
-                        let open = number <= game.save.unlockedLevel
-                        Button {
-                            if open && game.save.lives > 0 { game.start(number) }
-                        } label: {
-                            HStack(spacing: 16) {
-                                ZStack {
-                                    Circle()
-                                        .fill(open ? AnyShapeStyle(Color.yellow.gradient) : AnyShapeStyle(Color.gray.gradient))
-                                        .frame(width: 58, height: 58)
-                                    Text("\(number)")
-                                        .font(.title2.bold())
-                                        .foregroundStyle(open ? .black : .white.opacity(0.5))
+                            VStack(spacing: 18) {
+                                ForEach(1...30, id: \.self) { number in
+                                    levelNode(number, width: geo.size.width)
                                 }
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(Level.make(number).title).font(.headline)
-                                    HStack(spacing: 3) {
-                                        ForEach(0..<(game.save.completed[number] ?? 0), id: \.self) { _ in
-                                            Image(systemName: "star.fill")
-                                                .foregroundStyle(.yellow)
-                                                .font(.caption)
-                                        }
-                                    }
-                                }
-                                Spacer()
-                                Image(systemName: open ? "play.fill" : "lock.fill")
                             }
-                            .padding()
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22))
+                            .padding(.vertical, 24)
                         }
-                        .buttonStyle(.plain)
-                        .disabled(!open)
                     }
                 }
+            }
+        }
+    }
 
-                if game.save.lives == 0 {
-                    Button("Refill Lives • 250 Coins") { game.buyLives() }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.pink)
+    private var title: some View {
+        VStack(spacing: 2) {
+            ZStack {
+                Circle()
+                    .fill(LinearGradient(colors: [.yellow, .orange], startPoint: .top, endPoint: .bottom))
+                    .frame(width: 74, height: 74)
+                    .shadow(color: .yellow.opacity(0.55), radius: 16)
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 39, weight: .black))
+                    .foregroundStyle(.white)
+            }
+            Text("CROWN")
+                .font(.system(size: 38, weight: .black, design: .rounded))
+                .foregroundStyle(.yellow)
+                .shadow(color: .black.opacity(0.6), radius: 2, y: 2)
+            Text("GARDENS")
+                .font(.system(size: 23, weight: .black, design: .rounded))
+                .tracking(5)
+                .foregroundStyle(.white)
+        }
+        .padding(.top, 18)
+    }
+
+    private var stats: some View {
+        HStack(spacing: 8) {
+            StatPill(icon: "heart.fill", value: "\(game.save.lives)", color: .pink)
+            StatPill(icon: "star.fill", value: "\(game.save.stars)", color: .yellow)
+            StatPill(icon: "circle.fill", value: "\(game.save.coins)", color: .orange)
+        }
+        .padding(.top, 12)
+    }
+
+    private func levelNode(_ number: Int, width: CGFloat) -> some View {
+        let open = number <= game.save.unlockedLevel
+        let stars = game.save.completed[number] ?? 0
+        let offset = sin(Double(number) * 1.42) * Double(min(width * 0.25, 95))
+        return Button {
+            if open && game.save.lives > 0 { game.start(number) }
+        } label: {
+            VStack(spacing: 3) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            open
+                            ? LinearGradient(colors: [.yellow, .orange], startPoint: .top, endPoint: .bottom)
+                            : LinearGradient(colors: [.gray, .black.opacity(0.65)], startPoint: .top, endPoint: .bottom)
+                        )
+                        .frame(width: 70, height: 70)
+                        .overlay(Circle().stroke(.white.opacity(0.85), lineWidth: 4))
+                        .shadow(color: open ? .yellow.opacity(0.45) : .black.opacity(0.4), radius: 8, y: 4)
+                    if open {
+                        Text("\(number)")
+                            .font(.system(size: 24, weight: .black, design: .rounded))
+                            .foregroundStyle(.white)
+                    } else {
+                        Image(systemName: "lock.fill").font(.title2)
+                    }
+                }
+                HStack(spacing: 2) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Image(systemName: index < stars ? "star.fill" : "star")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.yellow)
+                    }
                 }
             }
-            .padding()
+        }
+        .buttonStyle(.plain)
+        .disabled(!open)
+        .offset(x: offset)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct RoyalWorldBackground: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color(red: 0.16, green: 0.64, blue: 0.96), Color(red: 0.42, green: 0.82, blue: 0.66)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack {
+                ZStack(alignment: .bottom) {
+                    ForEach(0..<5, id: \.self) { i in
+                        RoundedRectangle(cornerRadius: 18)
+                            .fill(Color.white.opacity(0.95))
+                            .frame(width: i == 2 ? 105 : 72, height: i == 2 ? 170 : 125)
+                            .overlay(alignment: .top) {
+                                Triangle()
+                                    .fill(i == 2 ? Color.blue : Color.indigo)
+                                    .frame(width: i == 2 ? 115 : 80, height: 70)
+                                    .offset(y: -46)
+                            }
+                            .offset(x: CGFloat(i - 2) * 62)
+                    }
+                }
+                .frame(height: 190)
+                .padding(.top, 130)
+
+                Spacer()
+
+                HStack(alignment: .bottom, spacing: 0) {
+                    ForEach(0..<8, id: \.self) { i in
+                        Circle()
+                            .fill(i.isMultiple(of: 2) ? Color.green : Color.mint)
+                            .frame(width: 100, height: 100)
+                            .offset(y: CGFloat((i % 3) * 18))
+                    }
+                }
+                .blur(radius: 1)
+            }
+            .opacity(0.75)
+            .ignoresSafeArea()
+        }
+    }
+}
+
+struct RoyalPath: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        let steps = 12
+        for i in 1...steps {
+            let progress = CGFloat(i) / CGFloat(steps)
+            let y = rect.maxY - progress * rect.height
+            let x = rect.midX + sin(progress * .pi * 5) * rect.width * 0.32
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        return path
+    }
+}
+
+struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { p in
+            p.move(to: CGPoint(x: rect.midX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+            p.closeSubpath()
         }
     }
 }
