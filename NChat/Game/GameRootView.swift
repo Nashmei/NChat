@@ -16,10 +16,27 @@ struct GameRootView: View {
             .ignoresSafeArea()
 
             switch game.state {
-            case .map:
-                MapView().environmentObject(game)
             case .playing, .won, .lost:
                 PlayView().environmentObject(game)
+            case .map:
+                switch game.screen {
+                case .home:
+                    RoyalHomeView().environmentObject(game)
+                case .map:
+                    MapView().environmentObject(game)
+                case .missions:
+                    MissionsView().environmentObject(game)
+                case .events:
+                    EventsView().environmentObject(game)
+                case .shop:
+                    ShopView().environmentObject(game)
+                case .regions:
+                    RegionsView().environmentObject(game)
+                case .settings:
+                    SettingsScreen().environmentObject(game)
+                case .renovation:
+                    RenovationView().environmentObject(game)
+                }
             }
         }
         .preferredColorScheme(.dark)
