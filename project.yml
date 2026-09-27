@@ -1,42 +1,32 @@
-name: NChat
+name: CrownGardens
 options:
   bundleIdPrefix: com.nashmei
   objectVersion: 56
-
 settings:
   base:
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-
 targets:
-  NChat:
+  CrownGardens:
     type: application
     platform: iOS
     sources:
       - path: NChat/App/NChatApp.swift
-      - path: NChat/Game/BattleView.swift
-      - path: NChat/Game/CommandCenterView.swift
-      - path: NChat/Game/FeedbackService.swift
       - path: NChat/Game/GameModels.swift
+      - path: NChat/Game/MatchEngine.swift
+      - path: NChat/Game/CrownStore.swift
       - path: NChat/Game/GameRootView.swift
-      - path: NChat/Game/GameStore.swift
-      - path: NChat/Game/HomeView.swift
-      - path: NChat/Game/LoadoutView.swift
-      - path: NChat/Game/MetaViews.swift
-      - path: NChat/Game/OnboardingView.swift
-      - path: NChat/Game/ProductionModels.swift
-      - path: NChat/Game/TacticalAIService.swift
       - path: NChat/Assets.xcassets
         buildPhase: resources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.nashmei.NChat
-        PRODUCT_NAME: Prompt Wars
-        MARKETING_VERSION: "3.0.0"
-        CURRENT_PROJECT_VERSION: "30"
+        PRODUCT_BUNDLE_IDENTIFIER: com.nashmei.CrownGardens
+        PRODUCT_NAME: Crown Gardens
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.0"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: "Prompt Wars"
+        INFOPLIST_KEY_CFBundleDisplayName: "Crown Gardens"
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UIStatusBarHidden: YES
