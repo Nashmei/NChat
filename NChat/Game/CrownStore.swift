@@ -3,11 +3,14 @@ import AudioToolbox
 import UIKit
 @MainActor final class CrownStore:ObservableObject{
  enum Screen:Hashable{case home,map,missions,events,shop,regions,settings,renovation}
- enum PlayState{case map,playing,won,lost}
- @Published var screen:Screen = .home;@Published var save=PlayerSave();@Published var board=MatchEngine.freshBoard();@Published var level=Level.make(1);@Published var movesLeft=0;@Published var remaining:[GemKind:Int]=[:];@Published var selected:Cell?;@Published var score=0;@Published var combo=0;@Published var state:PlayState = .map;@Published var message="";@Published var showDaily=false;@Published var sound=true;@Published var haptics=true;@Published var resolving=false;@Published var celebration=0
+ enum PlayState{case map,levelIntro,playing,won,lost}
+ @Published var screen:Screen = .home;@Published var selectedLevel=1;@Published var preBomb=false;@Published var preRocket=false;@Published var preRainbow=false;@Published var save=PlayerSave();@Published var board=MatchEngine.freshBoard();@Published var level=Level.make(1);@Published var movesLeft=0;@Published var remaining:[GemKind:Int]=[:];@Published var selected:Cell?;@Published var score=0;@Published var combo=0;@Published var state:PlayState = .map;@Published var message="";@Published var showDaily=false;@Published var sound=true;@Published var haptics=true;@Published var resolving=false;@Published var celebration=0
  private let key="crown.gardens.save.v1"
  init(){load();claimDaily()}
- func start(_ n:Int){level=Level.make(n);board=MatchEngine.freshBoard();movesLeft=level.moves;remaining=level.targets;score=0;combo=0;selected=nil;message="";state = .playing;addBlockers(level.blockers)}
+ func selectLevel(_ n:Int){selectedLevel=n;level=Level.make(n);preBomb=false;preRocket=false;preRainbow=false;state = .levelIntro}
+ func beginSelectedLevel(){start(selectedLevel)}
+ func start(_ n:Int){level=Level.make(n);board=MatchEngine.freshBoard();movesLeft=level.moves;remaining=level.targets;score=0;combo=0;selected=nil;message="";state = .playing;addBlockers(level.blockers);applyPreBoosters()}
+ private func applyPreBoosters(){var cells=(0..<MatchEngine.size).flatMap{r in (0..<MatchEngine.size).map{Cell(row:r,col:$0)}}.shuffled();if preBomb,let p=cells.popLast(){board[p.row][p.col].special = .bomb};if preRocket,let p=cells.popLast(){board[p.row][p.col].special = Bool.random() ? .rowRocket:.columnRocket};if preRainbow,let p=cells.popLast(){board[p.row][p.col].special = .rainbow}}
  private func addBlockers(_ n:Int){guard n>0 else{return};var a=(0..<MatchEngine.size).flatMap{r in(0..<MatchEngine.size).map{Cell(row:r,col:$0)}}.shuffled();for _ in 0..<min(n,a.count){let p=a.removeLast();board[p.row][p.col].blocker=1}}
  func tap(_ p:Cell){guard state == .playing else{return};if let a=selected{selected=nil;if MatchEngine.adjacent(a,p){swap(a,p)}else{selected=p;feedback(1519)}}else{selected=p;feedback(1519)}}
  func swipe(from p:Cell,dx:CGFloat,dy:CGFloat){guard state == .playing else{return};var q=p;if abs(dx)>abs(dy){q=Cell(row:p.row,col:p.col+(dx>0 ? 1:-1))}else{q=Cell(row:p.row+(dy>0 ? 1:-1),col:p.col)};guard (0..<8).contains(q.row),(0..<8).contains(q.col) else{return};swap(p,q)}
