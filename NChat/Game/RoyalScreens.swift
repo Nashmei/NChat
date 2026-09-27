@@ -107,28 +107,61 @@ struct SettingsScreen: View {
 
 struct RenovationView: View {
     @EnvironmentObject var game: CrownStore
+    private var cost: Int { max(1, game.save.renovationStage + 1) }
+    private var progress: Double { Double(game.save.renovationStage) / 6.0 }
+
     var body: some View {
         ZStack {
             RoyalWorldBackground()
-            VStack {
+            VStack(spacing: 12) {
                 TopCurrencyBar().environmentObject(game)
                 Spacer()
                 RoyalPanel {
-                    VStack(spacing:14) {
-                        RoyalHeader(title:"تجديد الحديقة")
-                        Image(systemName:"fountain.fill").font(.system(size:64)).foregroundStyle(.blue)
-                        ProgressView(value:0.8).tint(.green)
-                        Text("80%").font(.title2.bold()).foregroundStyle(RoyalTheme.navy)
-                        Text("اختر تصميم النافورة الجديدة").foregroundStyle(.gray)
-                        HStack { choice("leaf.fill",.green);choice("drop.fill",.blue);choice("sun.max.fill",.orange) }
-                        RoyalButton(title:"تأكيد",icon:"checkmark"){game.go(.home)}
+                    VStack(spacing: 14) {
+                        RoyalHeader(title: "تجديد الحديقة")
+                        ZStack {
+                            Circle().fill(.blue.opacity(0.16)).frame(width: 110, height: 110)
+                            Image(systemName: renovationIcon)
+                                .font(.system(size: 62, weight: .bold))
+                                .foregroundStyle(game.save.renovationStage >= 6 ? .green : .blue)
+                        }
+                        Text(renovationTitle)
+                            .font(.title2.bold()).foregroundStyle(RoyalTheme.navy)
+                        ProgressView(value: progress).tint(.green)
+                        Text("\(Int(progress * 100))%")
+                            .font(.headline.bold()).foregroundStyle(RoyalTheme.navy)
+                        HStack {
+                            Label("\(game.save.renovationPoints)", systemImage: "star.circle.fill")
+                                .foregroundStyle(.orange)
+                            Spacer()
+                            Text(game.save.renovationStage >= 6 ? "اكتمل التجديد" : "التكلفة: \(cost)")
+                                .font(.subheadline.bold()).foregroundStyle(.gray)
+                        }
+                        if game.save.renovationStage < 6 {
+                            RoyalButton(title: "نفّذ التجديد • \(cost)", icon: "hammer.fill") {
+                                game.renovate()
+                            }
+                            .opacity(game.save.renovationPoints >= cost ? 1 : 0.45)
+                        } else {
+                            Label("الحديقة الملكية مكتملة!", systemImage: "crown.fill")
+                                .font(.headline.bold()).foregroundStyle(.green)
+                        }
                     }
-                }.padding(20)
+                }
+                .padding(.horizontal, 20)
                 Spacer()
+                BottomRoyalNav().environmentObject(game)
             }
         }
     }
-    private func choice(_ icon:String,_ color:Color)->some View { RoundedRectangle(cornerRadius:14).fill(color.opacity(0.2)).frame(height:76).overlay(Image(systemName:icon).font(.title).foregroundStyle(color)).overlay(RoundedRectangle(cornerRadius:14).stroke(RoyalTheme.gold,lineWidth:2)) }
+
+    private var renovationTitle: String {
+        ["النافورة القديمة","الممر الملكي","حديقة الورود","بوابة القصر","الجناح الذهبي","الساحة الملكية","الحديقة مكتملة"][min(game.save.renovationStage, 6)]
+    }
+
+    private var renovationIcon: String {
+        ["drop.fill","road.lanes","camera.macro","door.left.hand.open","building.columns.fill","crown.fill","sparkles"][min(game.save.renovationStage, 6)]
+    }
 }
 
 struct RoyalListScreen<Content: View>: View {
