@@ -42,49 +42,95 @@ struct RoyalHomeView: View {
 
 struct MissionsView: View {
     @EnvironmentObject var game: CrownStore
-    let missions = [
-        ("heart.fill", "اجمع 500 قطعة حمراء", 320, 500),
-        ("scope", "أكمل 30 مستوى", 12, 30),
-        ("burst.fill", "استخدم 10 معززات", 6, 10),
-        ("shippingbox.fill", "افتح 5 صناديق", 3, 5)
-    ]
-    var body: some View { RoyalListScreen(title: "المهام اليومية") {
-        ForEach(Array(missions.enumerated()), id: \.offset) { _, m in
-            RoyalPanel {
-                HStack {
-                    Image(systemName: m.0).font(.title).foregroundStyle(.red).frame(width: 42)
-                    VStack(alignment: .leading, spacing: 7) {
-                        Text(m.1).font(.headline).foregroundStyle(RoyalTheme.navy)
-                        ProgressView(value: Double(m.2), total: Double(m.3)).tint(.green)
-                        Text("\(m.2)/\(m.3)").font(.caption.bold()).foregroundStyle(.gray)
-                    }
-                    Image(systemName: "gift.fill").foregroundStyle(.purple).font(.title2)
+    var body: some View {
+        RoyalListScreen(title: "المهام") {
+            mission("sparkles", "اجمع 500 قطعة", game.save.gemsCleared, 500, .blue)
+            mission("crown.fill", "افز في 30 مستوى", game.save.levelsWon, 30, .orange)
+            mission("burst.fill", "استخدم 20 معززًا", game.save.boostersUsed, 20, .purple)
+            mission("hammer.fill", "أكمل 6 تجديدات", game.save.renovationStage, 6, .green)
+        }.environmentObject(game)
+    }
+    private func mission(_ icon:String,_ title:String,_ value:Int,_ goal:Int,_ color:Color)->some View {
+        RoyalPanel {
+            HStack {
+                ZStack {
+                    Circle().fill(color.gradient).frame(width:50,height:50)
+                    Image(systemName:icon).font(.title3.bold()).foregroundStyle(.white)
                 }
+                VStack(alignment:.leading,spacing:7) {
+                    Text(title).font(.headline).foregroundStyle(RoyalTheme.navy)
+                    ProgressView(value:Double(min(value,goal)),total:Double(goal)).tint(.green)
+                    Text("\(min(value,goal))/\(goal)").font(.caption.bold()).foregroundStyle(.gray)
+                }
+                Spacer()
+                Image(systemName:value>=goal ? "checkmark.seal.fill":"gift.fill")
+                    .font(.title2).foregroundStyle(value>=goal ? .green:.purple)
             }
         }
-    }.environmentObject(game)}
+    }
 }
 
 struct EventsView: View {
     @EnvironmentObject var game: CrownStore
-    var body: some View { RoyalListScreen(title: "الأحداث") {
-        event("balloon.2.fill", "رحلة الملوك", "يوم و 14 ساعة", .purple)
-        event("crown.fill", "تحدي التاج", "3 أيام و 12 ساعة", .orange)
-        event("star.fill", "جامع النجوم", "5 أيام و 8 ساعات", .blue)
-    }.environmentObject(game)}
-    private func event(_ icon:String,_ title:String,_ time:String,_ color:Color)->some View {
-        RoyalPanel { HStack { ZStack { RoundedRectangle(cornerRadius:16).fill(color.gradient).frame(width:82,height:70);Image(systemName:icon).font(.largeTitle).foregroundStyle(.white) };VStack(alignment:.leading){Text(title).font(.title3.bold()).foregroundStyle(RoyalTheme.navy);Label(time,systemImage:"clock.fill").font(.caption).foregroundStyle(.gray)};Spacer() } }
+    var body: some View {
+        RoyalListScreen(title: "الأحداث") {
+            event("balloon.2.fill", "رحلة الملوك", "اربح مستويات متتالية", .purple, game.save.levelsWon % 10, 10)
+            event("crown.fill", "تحدي التاج", "اجمع النجوم الملكية", .orange, game.save.stars % 30, 30)
+            event("sparkles", "جامع الجواهر", "امسح 1000 قطعة", .blue, game.save.gemsCleared % 1000, 1000)
+        }.environmentObject(game)
+    }
+    private func event(_ icon:String,_ title:String,_ subtitle:String,_ color:Color,_ value:Int,_ goal:Int)->some View {
+        RoyalPanel {
+            HStack {
+                ZStack {
+                    RoundedRectangle(cornerRadius:16).fill(color.gradient).frame(width:82,height:76)
+                    Image(systemName:icon).font(.largeTitle).foregroundStyle(.white)
+                }
+                VStack(alignment:.leading,spacing:5) {
+                    Text(title).font(.title3.bold()).foregroundStyle(RoyalTheme.navy)
+                    Text(subtitle).font(.caption).foregroundStyle(.gray)
+                    ProgressView(value:Double(value),total:Double(goal)).tint(color)
+                    Text("\(value)/\(goal)").font(.caption2.bold()).foregroundStyle(.gray)
+                }
+                Spacer()
+            }
+        }
     }
 }
 
 struct ShopView: View {
     @EnvironmentObject var game: CrownStore
-    var body: some View { RoyalListScreen(title: "المتجر") {
-        HStack { product("hammer.fill","مطرقة",100);product("arrow.left.and.right","صاروخ",100);product("paintpalette.fill","كرة الألوان",150) }
-        HStack { product("burst.fill","قنبلة",125);product("arrow.left.arrow.right","سهم مزدوج",150);product("crown.fill","تاج ملكي",250) }
-    }.environmentObject(game)}
-    private func product(_ icon:String,_ name:String,_ price:Int)->some View {
-        RoyalPanel { VStack(spacing:8){Image(systemName:icon).font(.largeTitle).foregroundStyle(.purple);Text(name).font(.caption.bold()).foregroundStyle(RoyalTheme.navy);Label("\(price)",systemImage:"circle.fill").font(.caption.bold()).foregroundStyle(.orange)} }.frame(maxWidth:.infinity)
+    var body: some View {
+        RoyalListScreen(title: "المتجر") {
+            HStack {
+                product("hammer.fill","مطرقة",100,game.save.hammer,"hammer",.purple)
+                product("shuffle","خلط",100,game.save.shuffle,"shuffle",.red)
+            }
+            HStack {
+                product("burst.fill","قنبلة",125,game.save.bombs,"bomb",.orange)
+                product("arrow.left.and.right.circle.fill","صاروخ",125,game.save.rockets,"rocket",.red)
+            }
+            product("sparkles","كرة الألوان",150,game.save.rainbows,"rainbow",.blue)
+        }.environmentObject(game)
+    }
+    private func product(_ icon:String,_ name:String,_ price:Int,_ owned:Int,_ key:String,_ color:Color)->some View {
+        RoyalPanel {
+            VStack(spacing:9) {
+                ZStack {
+                    Circle().fill(color.gradient).frame(width:62,height:62)
+                    Image(systemName:icon).font(.title2.bold()).foregroundStyle(.white)
+                }
+                Text(name).font(.headline).foregroundStyle(RoyalTheme.navy)
+                Text("لديك ×\(owned)").font(.caption.bold()).foregroundStyle(.gray)
+                Button { game.buyBooster(key) } label: {
+                    Label("\(price)",systemImage:"circle.fill")
+                        .font(.subheadline.bold()).foregroundStyle(.white)
+                        .padding(.horizontal,14).padding(.vertical,7)
+                        .background(game.save.coins>=price ? Color.green:Color.gray,in:Capsule())
+                }.buttonStyle(.plain).disabled(game.save.coins<price)
+            }
+            .frame(maxWidth:.infinity)
+        }
     }
 }
 
