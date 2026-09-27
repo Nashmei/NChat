@@ -36,23 +36,17 @@ struct ProfileView: View {
             ZStack {
                 PWTheme.background
                 VStack(spacing: 18) {
-                    ZStack {
-                        Circle().fill(PWTheme.accent.opacity(0.18)).frame(width: 110, height: 110)
-                        Image(systemName: "person.crop.circle.fill").font(.system(size: 76)).foregroundStyle(PWTheme.accent)
-                    }
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 82)).foregroundStyle(PWTheme.accent)
                     Text("COMMANDER").font(.title.bold())
                     Text("LEVEL \(game.progress.level)").font(.caption.bold()).tracking(2).foregroundStyle(PWTheme.cyan)
                     GlassCard {
                         VStack(spacing: 14) {
                             row("Rating", "\(game.progress.rating)", "chart.line.uptrend.xyaxis")
-                            Divider()
-                            row("Victories", "\(game.progress.wins)", "trophy.fill")
-                            Divider()
-                            row("Defeats", "\(game.progress.losses)", "shield.slash")
-                            Divider()
-                            row("XP", "\(game.progress.xp)", "sparkles")
-                            Divider()
-                            row("Credits", "\(game.progress.credits)", "hexagon.fill")
+                            Divider(); row("Victories", "\(game.progress.wins)", "trophy.fill")
+                            Divider(); row("Defeats", "\(game.progress.losses)", "shield.slash")
+                            Divider(); row("XP", "\(game.progress.xp)", "sparkles")
+                            Divider(); row("Credits", "\(game.progress.credits)", "hexagon.fill")
                         }
                     }
                     Spacer()
@@ -72,30 +66,53 @@ struct ProfileView: View {
 
 struct GameSettingsView: View {
     @EnvironmentObject private var game: GameStore
+    @AppStorage("promptwars.onboarding.completed") private var onboardingCompleted = true
+
     var body: some View {
         NavigationStack {
             ZStack {
                 PWTheme.background
                 Form {
-                    Section("TACTICAL AI") {
-                        Toggle("Use NVIDIA tactical intelligence", isOn: $game.isAIEnabled)
-                        TextField("Secure proxy URL", text: $game.proxyURL)
-                            .textInputAutocapitalization(.never)
-                            .keyboardType(.URL)
-                        Text("The NVIDIA API key must stay on your backend. NChat sends only the player's tactical command to this proxy.")
+                    Section("EXPERIENCE") {
+                        Toggle("Haptics", isOn: $game.hapticsEnabled)
+                        Toggle("Sound effects", isOn: $game.soundEnabled)
+                        Picker("Language", selection: $game.language) {
+                            ForEach(AppLanguage.allCases) { Text($0.rawValue).tag($0) }
+                        }
+                    }
+
+                    Section("NVIDIA TACTICAL AI") {
+                        Toggle("Enable tactical AI", isOn: $game.isAIEnabled)
+                        TextField("Secure AI proxy URL", text: $game.proxyURL)
+                            .textInputAutocapitalization(.never).keyboardType(.URL)
+                        Text("Never place an NVIDIA API key in the IPA. The proxy should validate the model output and return only tactic, lane, aggression, holdPosition and summary.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
+
+                    Section("ONLINE PLAY") {
+                        TextField("Game backend URL", text: $game.online.backendURL)
+                            .textInputAutocapitalization(.never).keyboardType(.URL)
+                        SecureField("Player session token", text: $game.online.playerToken)
+                        LabeledContent("Region", value: game.matchmaking.region)
+                        Text("Ranked/Blitz require a server-authoritative backend. Training is fully local.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+
                     Section("ENGINE") {
                         LabeledContent("Rules", value: "Deterministic")
                         LabeledContent("AI authority", value: "Tactics only")
                         LabeledContent("Battle format", value: "3 lanes")
+                        LabeledContent("Version", value: "3.0.0 (30)")
                     }
-                    Section("DATA") {
+
+                    Section("RESET") {
+                        Button("Replay onboarding") { onboardingCompleted = false }
                         Button("Reset current battle", role: .destructive) { game.resetBattle() }
                     }
-                    Section {
-                        Text("Prompt Wars • NChat Game Edition")
-                            .frame(maxWidth: .infinity).font(.footnote).foregroundStyle(.secondary)
+
+                    Section("OPEN SOURCE") {
+                        Text("Built with Apple SwiftUI/UIKit/AVFoundation. Optional visual asset direction: Kenney CC0 Sci-Fi/UI packs. No third-party runtime dependency is required by the current target.")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 .scrollContentBackground(.hidden)
