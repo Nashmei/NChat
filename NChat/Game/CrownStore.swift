@@ -2,8 +2,9 @@ import SwiftUI
 import AudioToolbox
 import UIKit
 @MainActor final class CrownStore:ObservableObject{
+ enum Screen:Hashable{case home,map,missions,events,shop,regions,settings,renovation}
  enum PlayState{case map,playing,won,lost}
- @Published var save=PlayerSave();@Published var board=MatchEngine.freshBoard();@Published var level=Level.make(1);@Published var movesLeft=0;@Published var remaining:[GemKind:Int]=[:];@Published var selected:Cell?;@Published var score=0;@Published var combo=0;@Published var state:PlayState = .map;@Published var message="";@Published var showDaily=false;@Published var sound=true;@Published var haptics=true;@Published var resolving=false;@Published var celebration=0
+ @Published var screen:Screen = .home;@Published var save=PlayerSave();@Published var board=MatchEngine.freshBoard();@Published var level=Level.make(1);@Published var movesLeft=0;@Published var remaining:[GemKind:Int]=[:];@Published var selected:Cell?;@Published var score=0;@Published var combo=0;@Published var state:PlayState = .map;@Published var message="";@Published var showDaily=false;@Published var sound=true;@Published var haptics=true;@Published var resolving=false;@Published var celebration=0
  private let key="crown.gardens.save.v1"
  init(){load();claimDaily()}
  func start(_ n:Int){level=Level.make(n);board=MatchEngine.freshBoard();movesLeft=level.moves;remaining=level.targets;score=0;combo=0;selected=nil;message="";state = .playing;addBlockers(level.blockers)}
@@ -15,7 +16,7 @@ import UIKit
  private func evaluate(){if remaining.values.allSatisfy({$0==0}){let s=movesLeft>level.moves/2 ? 3:(movesLeft>3 ? 2:1);let old=save.completed[level.id] ?? 0;if s>old{save.stars+=s-old};save.completed[level.id]=max(old,s);save.coins+=50+s*25;save.unlockedLevel=max(save.unlockedLevel,min(30,level.id+1));state = .won;persist();feedback(1025)}else if movesLeft<=0{save.lives=max(0,save.lives-1);state = .lost;persist();feedback(1053)}}
  func hammer(_ p:Cell){guard state == .playing,save.hammer>0 else{return};save.hammer-=1;let t=board[p.row][p.col];if let v=remaining[t.kind],v>0{remaining[t.kind]=v-1};board[p.row][p.col]=Tile(kind:GemKind.allCases.randomElement() ?? .ruby);score+=100;persist();evaluate()}
  func shuffle(){guard state == .playing,save.shuffle>0 else{return};save.shuffle-=1;board=MatchEngine.freshBoard();addBlockers(level.blockers);persist();feedback(1520)}
- func next(){start(min(30,level.id+1))};func map(){state = .map}
+ func next(){start(min(30,level.id+1))};func map(){state = .map;screen = .map};func go(_ target:Screen){state = .map;screen=target}
  func buyLives(){guard save.coins>=250,save.lives<5 else{return};save.coins-=250;save.lives=5;persist()}
  private func claimDaily(){let d=Calendar.current.startOfDay(for:Date()).timeIntervalSince1970;if UserDefaults.standard.double(forKey:"crown.daily")<d{save.coins+=100;UserDefaults.standard.set(d,forKey:"crown.daily");showDaily=true;persist()}}
  private func feedback(_ id:SystemSoundID){if sound{AudioServicesPlaySystemSound(id)};if haptics{UIImpactFeedbackGenerator(style:.soft).impactOccurred()}}
