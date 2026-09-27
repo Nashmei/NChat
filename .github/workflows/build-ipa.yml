@@ -1,6 +1,8 @@
 name: Build Crown Gardens IPA
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 jobs:
   build:
     runs-on: macos-15
