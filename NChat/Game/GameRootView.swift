@@ -87,6 +87,15 @@ struct LevelIntroView: View {
                                         }
                                     }
                                 }
+                                if game.level.blockers > 0 {
+                                    VStack {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 10).fill(.brown.gradient).frame(width: 48, height: 48)
+                                            Image(systemName: "shippingbox.fill").foregroundStyle(.white).font(.title3.bold())
+                                        }
+                                        Text("\(game.level.blockers)").font(.headline.bold()).foregroundStyle(RoyalTheme.navy)
+                                    }
+                                }
                             }
                             Spacer()
                             VStack {
@@ -369,6 +378,16 @@ struct PlayView: View {
                                             Image(systemName: kind.symbol).font(.caption.bold()).foregroundStyle(.white)
                                         }
                                         Text("\(game.remaining[kind] ?? 0)")
+                                            .font(.headline.bold().monospacedDigit()).foregroundStyle(RoyalTheme.navy)
+                                    }
+                                }
+                                if game.level.blockers > 0 {
+                                    HStack(spacing: 5) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 8).fill(.brown.gradient).frame(width: 34, height: 34)
+                                            Image(systemName: "shippingbox.fill").font(.caption.bold()).foregroundStyle(.white)
+                                        }
+                                        Text("\(game.blockersLeft)")
                                             .font(.headline.bold().monospacedDigit()).foregroundStyle(RoyalTheme.navy)
                                     }
                                 }
