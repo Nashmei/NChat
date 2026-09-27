@@ -251,46 +251,136 @@ struct MapView: View {
 
 struct RoyalWorldBackground: View {
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.16, green: 0.64, blue: 0.96), Color(red: 0.42, green: 0.82, blue: 0.66)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red:0.18,green:0.67,blue:0.98),
+                        Color(red:0.50,green:0.84,blue:0.98),
+                        Color(red:0.39,green:0.78,blue:0.45)
+                    ],
+                    startPoint:.top,endPoint:.bottom
+                )
 
-            VStack {
-                ZStack(alignment: .bottom) {
-                    ForEach(0..<5, id: \.self) { i in
-                        RoundedRectangle(cornerRadius: 18)
-                            .fill(Color.white.opacity(0.95))
-                            .frame(width: i == 2 ? 105 : 72, height: i == 2 ? 170 : 125)
-                            .overlay(alignment: .top) {
-                                Triangle()
-                                    .fill(i == 2 ? Color.blue : Color.indigo)
-                                    .frame(width: i == 2 ? 115 : 80, height: 70)
-                                    .offset(y: -46)
-                            }
-                            .offset(x: CGFloat(i - 2) * 62)
-                    }
+                ForEach(0..<7,id:\.self) { i in
+                    Capsule()
+                        .fill(.white.opacity(0.68))
+                        .frame(width: CGFloat(90 + i*13), height: CGFloat(25 + (i%3)*9))
+                        .blur(radius: 2)
+                        .position(x: CGFloat((i*83)%420)-10, y: CGFloat(65+i*42))
                 }
-                .frame(height: 190)
-                .padding(.top, 130)
 
-                Spacer()
-
-                HStack(alignment: .bottom, spacing: 0) {
-                    ForEach(0..<8, id: \.self) { i in
-                        Circle()
-                            .fill(i.isMultiple(of: 2) ? Color.green : Color.mint)
-                            .frame(width: 100, height: 100)
-                            .offset(y: CGFloat((i % 3) * 18))
-                    }
+                Path { p in
+                    p.move(to:CGPoint(x:0,y:h*0.46))
+                    p.addCurve(to:CGPoint(x:w,y:h*0.42),
+                               control1:CGPoint(x:w*0.25,y:h*0.32),
+                               control2:CGPoint(x:w*0.70,y:h*0.54))
+                    p.addLine(to:CGPoint(x:w,y:h))
+                    p.addLine(to:CGPoint(x:0,y:h))
+                    p.closeSubpath()
                 }
-                .blur(radius: 1)
+                .fill(LinearGradient(colors:[Color.green.opacity(0.70),Color(red:0.08,green:0.42,blue:0.18)],startPoint:.top,endPoint:.bottom))
+
+                castle(width:w)
+                    .frame(width:min(w*0.92,520),height:min(h*0.34,300))
+                    .position(x:w*0.50,y:h*0.31)
+                    .shadow(color:.black.opacity(0.22),radius:10,y:8)
+
+                Path { p in
+                    p.move(to:CGPoint(x:w*0.46,y:h*0.43))
+                    p.addCurve(to:CGPoint(x:w*0.58,y:h),
+                               control1:CGPoint(x:w*0.30,y:h*0.66),
+                               control2:CGPoint(x*w*0.72,y:h*0.74))
+                    p.addLine(to:CGPoint(x:w*0.82,y:h))
+                    p.addCurve(to:CGPoint(x:w*0.54,y:h*0.43),
+                               control1:CGPoint(x:w*0.72,y:h*0.76),
+                               control2:CGPoint(x*w*0.42,y:h*0.66))
+                    p.closeSubpath()
+                }
+                .fill(LinearGradient(colors:[Color(red:0.20,green:0.72,blue:0.94),Color(red:0.02,green:0.36,blue:0.72)],startPoint:.top,endPoint:.bottom))
+                .overlay(
+                    Path { p in
+                        p.move(to:CGPoint(x:w*0.50,y:h*0.45))
+                        p.addCurve(to:CGPoint(x:w*0.66,y:h),control1:CGPoint(x:w*0.38,y:h*0.68),control2:CGPoint(x:w*0.68,y:h*0.78))
+                    }.stroke(.white.opacity(0.58),lineWidth:4)
+                )
+
+                VStack {
+                    Spacer()
+                    HStack(alignment:.bottom,spacing:-12) {
+                        ForEach(0..<9,id:\.self) { i in
+                            gardenTree(index:i)
+                                .frame(width:CGFloat(70+(i%3)*15),height:CGFloat(115+(i%4)*12))
+                        }
+                    }
+                    .offset(y:20)
+                }
+
+                ForEach(0..<18,id:\.self) { i in
+                    Circle()
+                        .fill([Color.pink,.yellow,.white,.purple][i%4])
+                        .frame(width:CGFloat(5+i%4),height:CGFloat(5+i%4))
+                        .position(x:CGFloat((i*71)%390)+10,y:h*CGFloat(0.58+Double((i*17)%36)/100.0))
+                        .shadow(color:.white.opacity(0.5),radius:2)
+                }
+
+                LinearGradient(colors:[.clear,.black.opacity(0.12)],startPoint:.center,endPoint:.bottom)
             }
-            .opacity(0.75)
             .ignoresSafeArea()
+        }
+    }
+
+    @ViewBuilder private func castle(width:CGFloat) -> some View {
+        GeometryReader { g in
+            let cw=g.size.width, ch=g.size.height
+            ZStack(alignment:.bottom) {
+                RoundedRectangle(cornerRadius:24)
+                    .fill(LinearGradient(colors:[Color(red:1.0,green:0.91,blue:0.72),Color(red:0.86,green:0.66,blue:0.40)],startPoint:.top,endPoint:.bottom))
+                    .frame(width:cw*0.54,height:ch*0.56)
+                    .overlay(RoundedRectangle(cornerRadius:24).stroke(.white.opacity(0.65),lineWidth:3))
+                ForEach([-1,1],id:\.self) { side in
+                    VStack(spacing:-5) {
+                        ZStack {
+                            Triangle().fill(LinearGradient(colors:[RoyalTheme.blue,RoyalTheme.navy],startPoint:.top,endPoint:.bottom))
+                            Circle().fill(RoyalTheme.gold).frame(width:8,height:8).offset(y:-18)
+                        }.frame(width:cw*0.18,height:ch*0.25)
+                        RoundedRectangle(cornerRadius:18)
+                            .fill(LinearGradient(colors:[RoyalTheme.cream,Color(red:0.82,green:0.61,blue:0.38)],startPoint:.top,endPoint:.bottom))
+                            .frame(width:cw*0.18,height:ch*0.54)
+                            .overlay(VStack(spacing:12){
+                                ForEach(0..<3,id:\.self){_ in Capsule().fill(Color.blue.opacity(0.72)).frame(width:18,height:30)}
+                            })
+                    }
+                    .offset(x:CGFloat(side)*cw*0.32,y:0)
+                }
+                VStack(spacing:-6) {
+                    ZStack {
+                        Triangle().fill(LinearGradient(colors:[Color.indigo,RoyalTheme.navy],startPoint:.top,endPoint:.bottom))
+                        Image(systemName:"crown.fill").foregroundStyle(.yellow).font(.title3).offset(y:8)
+                    }.frame(width:cw*0.25,height:ch*0.30)
+                    RoundedRectangle(cornerRadius:20)
+                        .fill(LinearGradient(colors:[.white,RoyalTheme.cream],startPoint:.top,endPoint:.bottom))
+                        .frame(width:cw*0.25,height:ch*0.72)
+                        .overlay(VStack(spacing:10){
+                            Capsule().fill(Color.blue.opacity(0.78)).frame(width:26,height:40)
+                            RoundedRectangle(cornerRadius:12).fill(Color(red:0.35,green:0.16,blue:0.08)).frame(width:42,height:58)
+                        })
+                }
+                .offset(y:-ch*0.02)
+            }
+        }
+    }
+
+    private func gardenTree(index:Int) -> some View {
+        VStack(spacing:-12) {
+            ZStack {
+                Circle().fill(index.isMultiple(of:2) ? Color(red:0.16,green:0.62,blue:0.22) : Color(red:0.08,green:0.48,blue:0.18))
+                Circle().fill(Color.green.opacity(0.55)).scaleEffect(0.66).offset(x:-13,y:-12)
+                Circle().fill(Color.mint.opacity(0.35)).scaleEffect(0.38).offset(x:14,y:-18)
+            }
+            Rectangle().fill(Color(red:0.42,green:0.23,blue:0.10)).frame(width:10,height:42)
         }
     }
 }
