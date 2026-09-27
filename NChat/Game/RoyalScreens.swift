@@ -2,40 +2,93 @@ import SwiftUI
 
 struct RoyalHomeView: View {
     @EnvironmentObject var game: CrownStore
+    @State private var floatKing = false
+
     var body: some View {
         ZStack {
             RoyalWorldBackground()
-            VStack(spacing: 12) {
+
+            VStack(spacing:0) {
                 TopCurrencyBar().environmentObject(game)
-                Spacer()
-                VStack(spacing: 4) {
-                    Image(systemName: "crown.fill").font(.system(size: 70, weight: .black)).foregroundStyle(.yellow)
-                        .shadow(color: .orange, radius: 12)
-                    Text("CROWN GARDENS").font(.system(size: 36, weight: .black, design: .rounded))
-                        .foregroundStyle(.white).shadow(color: .black.opacity(0.6), radius: 3, y: 3)
-                    Text("حدائق التاج").font(.title3.bold()).foregroundStyle(.yellow)
+                    .padding(.top,6)
+
+                CrownLogo()
+                    .padding(.top,12)
+
+                Spacer(minLength:4)
+
+                ZStack(alignment:.bottom) {
+                    RoyalKing()
+                        .scaleEffect(0.82)
+                        .offset(y:floatKing ? -5:2)
+                        .animation(.easeInOut(duration:1.7).repeatForever(autoreverses:true),value:floatKing)
+
+                    HStack {
+                        homeBubble("checklist","المهام",.missions,.purple)
+                        Spacer()
+                        homeBubble("gift.fill","الأحداث",.events,.orange)
+                    }
+                    .padding(.horizontal,18)
+                    .padding(.bottom,34)
                 }
-                Spacer()
-                RoyalPanel {
-                    VStack(spacing: 12) {
-                        Text("أعد الحياة إلى الحديقة الملكية").font(.headline.bold()).foregroundStyle(RoyalTheme.navy)
-                        RoyalButton(title: "ابدأ اللعب", icon: "play.fill") { game.go(.map) }
-                        HStack {
-                            mini("checklist", "المهام", .missions)
-                            mini("gift.fill", "الأحداث", .events)
-                            mini("storefront.fill", "المتجر", .shop)
+                .frame(height:230)
+
+                VStack(spacing:10) {
+                    HStack {
+                        VStack(alignment:.leading,spacing:3) {
+                            Text("الحديقة الملكية").font(.headline.bold()).foregroundStyle(RoyalTheme.navy)
+                            Text("التجديد \(game.save.renovationStage)/6")
+                                .font(.caption.bold()).foregroundStyle(.gray)
                         }
+                        Spacer()
+                        ProgressView(value:Double(game.save.renovationStage),total:6)
+                            .tint(.green).frame(width:105)
+                    }
+
+                    RoyalButton(title:"ابدأ اللعب",icon:"play.fill") { game.go(.map) }
+
+                    HStack(spacing:8) {
+                        mini("hammer.fill","التجديد",.renovation)
+                        mini("crown.fill","المناطق",.regions)
+                        mini("storefront.fill","المتجر",.shop)
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(14)
+                .background(.ultraThinMaterial,in:RoundedRectangle(cornerRadius:26))
+                .overlay(RoundedRectangle(cornerRadius:26).stroke(RoyalTheme.gold,lineWidth:3))
+                .shadow(color:.black.opacity(0.25),radius:10,y:5)
+                .padding(.horizontal,14)
+                .padding(.bottom,8)
+
                 BottomRoyalNav().environmentObject(game)
             }
         }
+        .onAppear { floatKing=true }
     }
-    private func mini(_ icon: String, _ title: String, _ target: CrownStore.Screen) -> some View {
+
+    private func homeBubble(_ icon:String,_ title:String,_ target:CrownStore.Screen,_ color:Color)->some View {
         Button { game.go(target) } label: {
-            VStack { Image(systemName: icon).font(.title2); Text(title).font(.caption.bold()) }
-                .foregroundStyle(RoyalTheme.navy).frame(maxWidth: .infinity)
+            VStack(spacing:3) {
+                Image(systemName:icon).font(.title2.bold()).foregroundStyle(.white)
+                    .frame(width:52,height:52).background(color.gradient,in:Circle())
+                    .overlay(Circle().stroke(.white,lineWidth:3))
+                    .shadow(color:.black.opacity(0.25),radius:4,y:3)
+                Text(title).font(.caption2.bold()).foregroundStyle(.white)
+                    .shadow(color:.black,radius:2)
+            }
+        }.buttonStyle(.plain)
+    }
+
+    private func mini(_ icon:String,_ title:String,_ target:CrownStore.Screen)->some View {
+        Button { game.go(target) } label: {
+            VStack(spacing:4) {
+                Image(systemName:icon).font(.title3.bold())
+                Text(title).font(.caption2.bold())
+            }
+            .foregroundStyle(RoyalTheme.navy)
+            .frame(maxWidth:.infinity)
+            .padding(.vertical,7)
+            .background(.white.opacity(0.65),in:RoundedRectangle(cornerRadius:14))
         }.buttonStyle(.plain)
     }
 }
