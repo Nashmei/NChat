@@ -331,55 +331,96 @@ struct PlayView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 10) {
-                HStack {
-                    Button { game.map() } label: {
-                        Image(systemName: "chevron.left").font(.title2.bold())
-                    }
-                    Spacer()
-                    Text("LEVEL \(game.level.id)").font(.headline.bold())
-                    Spacer()
-                    Text("\(game.movesLeft)")
-                        .font(.title2.bold().monospacedDigit())
-                        .frame(width: 44)
-                        .padding(7)
-                        .background(.black.opacity(0.30), in: Circle())
-                }
-                .padding(.horizontal)
+            ZStack {
+                LinearGradient(
+                    colors: [Color(red: 0.18, green: 0.52, blue: 0.82), Color(red: 0.04, green: 0.18, blue: 0.42)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ).ignoresSafeArea()
 
-                targets
-
-                BoardView()
-                    .environmentObject(game)
-                    .frame(
-                        width: min(geometry.size.width - 16, 500),
-                        height: min(geometry.size.width - 16, 500)
-                    )
-
-                HStack(spacing: 30) {
-                    VStack {
-                        Image(systemName: "hammer.fill").font(.title2)
-                        Text("Hold a tile").font(.caption2)
-                        Text("×\(game.save.hammer)").bold()
-                    }
-                    Button { game.shuffle() } label: {
-                        VStack {
-                            Image(systemName: "shuffle").font(.title2)
-                            Text("Shuffle").font(.caption2)
-                            Text("×\(game.save.shuffle)").bold()
+                VStack(spacing: 8) {
+                    HStack {
+                        Button { game.map() } label: {
+                            Image(systemName: "chevron.backward")
+                                .font(.title3.bold()).foregroundStyle(.white)
+                                .frame(width: 42, height: 42).background(RoyalTheme.navy, in: Circle())
+                                .overlay(Circle().stroke(RoyalTheme.gold, lineWidth: 2))
+                        }
+                        CurrencyChip(icon: "heart.fill", value: "\(game.save.lives)", tint: .red)
+                        Spacer()
+                        CurrencyChip(icon: "circle.fill", value: "\(game.save.coins)", tint: .yellow)
+                        Button { game.go(.settings) } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.title3.bold()).foregroundStyle(.white)
+                                .frame(width: 42, height: 42).background(RoyalTheme.navy, in: Circle())
+                                .overlay(Circle().stroke(RoyalTheme.gold, lineWidth: 2))
                         }
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 10)
+
+                    HStack(spacing: 10) {
+                        RoyalPanel {
+                            HStack(spacing: 14) {
+                                ForEach(Array(game.remaining.keys), id: \.self) { kind in
+                                    HStack(spacing: 5) {
+                                        ZStack {
+                                            Circle().fill(kind.color.gradient).frame(width: 34, height: 34)
+                                            Image(systemName: kind.symbol).font(.caption.bold()).foregroundStyle(.white)
+                                        }
+                                        Text("\(game.remaining[kind] ?? 0)")
+                                            .font(.headline.bold().monospacedDigit()).foregroundStyle(RoyalTheme.navy)
+                                    }
+                                }
+                            }
+                        }
+                        VStack(spacing: 1) {
+                            Text("الحركات").font(.caption2.bold()).foregroundStyle(.white.opacity(0.85))
+                            Text("\(game.movesLeft)")
+                                .font(.system(size: 30, weight: .black, design: .rounded))
+                                .foregroundStyle(.white)
+                        }
+                        .frame(width: 72, height: 62)
+                        .background(RoyalTheme.navy, in: RoundedRectangle(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(RoyalTheme.gold, lineWidth: 3))
+                    }
+                    .padding(.horizontal, 10)
+
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(LinearGradient(colors: [RoyalTheme.gold, .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .shadow(color: .black.opacity(0.45), radius: 10, y: 6)
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color(red: 0.02, green: 0.22, blue: 0.45))
+                            .padding(5)
+                        BoardView().environmentObject(game).padding(9)
+                    }
+                    .frame(width: min(geometry.size.width - 12, 500), height: min(geometry.size.width - 12, 500))
+
+                    HStack(spacing: 14) {
+                        actionBooster("hammer.fill", "\(game.save.hammer)", .purple) {
+                            game.message = "اضغط مطولاً على قطعة لاستخدام المطرقة"
+                        }
+                        actionBooster("shuffle", "\(game.save.shuffle)", .red) { game.shuffle() }
+                        actionBooster("burst.fill", "×", .orange) { game.message = "اصنع 5 قطع للحصول على معزز قوي" }
+                        actionBooster("sparkles", "×", .blue) { game.message = "ادمج المعززات لتأثير أكبر" }
+                    }
+
+                    Text(game.message)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.yellow)
+                        .frame(height: 22)
+
+                    HStack {
+                        Label("\(game.score)", systemImage: "star.circle.fill")
+                        Spacer()
+                        if game.combo > 1 { Text("COMBO ×\(game.combo)").foregroundStyle(.yellow) }
+                    }
+                    .font(.caption.bold()).foregroundStyle(.white)
+                    .padding(.horizontal, 20)
+                    Spacer(minLength: 4)
                 }
                 .padding(.top, 4)
-
-                Text(game.message)
-                    .font(.caption.bold())
-                    .foregroundStyle(.yellow)
-                    .frame(height: 18)
-                Spacer()
             }
-            .padding(.top, 6)
         }
         .overlay {
             if game.state == .won {
@@ -390,21 +431,21 @@ struct PlayView: View {
         }
     }
 
-    private var targets: some View {
-        HStack(spacing: 8) {
-            ForEach(Array(game.remaining.keys), id: \.self) { kind in
-                HStack(spacing: 5) {
-                    Image(systemName: kind.symbol).foregroundStyle(kind.color)
-                    Text("\(game.remaining[kind] ?? 0)").bold().monospacedDigit()
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(.black.opacity(0.25), in: Capsule())
+    private func actionBooster(_ icon: String, _ value: String, _ tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            ZStack(alignment: .bottomTrailing) {
+                Circle()
+                    .fill(tint.gradient)
+                    .frame(width: 58, height: 58)
+                    .overlay(Circle().stroke(.yellow.opacity(0.9), lineWidth: 3))
+                    .shadow(color: .black.opacity(0.35), radius: 4, y: 3)
+                    .overlay(Image(systemName: icon).font(.title2.bold()).foregroundStyle(.white))
+                Text(value)
+                    .font(.caption2.black()).foregroundStyle(.white)
+                    .padding(5).background(.red, in: Circle())
+                    .offset(x: 3, y: 3)
             }
-            Spacer()
-            Text("\(game.score)").font(.caption.bold().monospacedDigit())
-        }
-        .padding(.horizontal)
+        }.buttonStyle(.plain)
     }
 }
 
