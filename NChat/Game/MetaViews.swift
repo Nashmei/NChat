@@ -88,17 +88,7 @@ struct GameSettingsView: View {
                         Text("Never place an NVIDIA API key in the IPA. The proxy should validate the model output and return only tactic, lane, aggression, holdPosition and summary.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-
-                    Section("ONLINE PLAY") {
-                        TextField("Game backend URL", text: $game.online.backendURL)
-                            .textInputAutocapitalization(.never).keyboardType(.URL)
-                        SecureField("Player session token", text: $game.online.playerToken)
-                        LabeledContent("Region", value: game.matchmaking.region)
-                        Text("Ranked/Blitz require a server-authoritative backend. Training is fully local.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-
-                    Section("ENGINE") {
+\n\n                    Section("ENGINE") {
                         LabeledContent("Rules", value: "Deterministic")
                         LabeledContent("AI authority", value: "Tactics only")
                         LabeledContent("Battle format", value: "3 lanes")
