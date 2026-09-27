@@ -2,6 +2,7 @@ name: NChat
 options:
   bundleIdPrefix: com.nashmei
   objectVersion: 56
+
 settings:
   base:
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
@@ -12,9 +13,18 @@ targets:
     platform: iOS
     sources:
       - path: NChat/App/NChatApp.swift
-      - path: NChat/Game
-        excludes:
-          - OnlineService.swift
+      - path: NChat/Game/BattleView.swift
+      - path: NChat/Game/CommandCenterView.swift
+      - path: NChat/Game/FeedbackService.swift
+      - path: NChat/Game/GameModels.swift
+      - path: NChat/Game/GameRootView.swift
+      - path: NChat/Game/GameStore.swift
+      - path: NChat/Game/HomeView.swift
+      - path: NChat/Game/LoadoutView.swift
+      - path: NChat/Game/MetaViews.swift
+      - path: NChat/Game/OnboardingView.swift
+      - path: NChat/Game/ProductionModels.swift
+      - path: NChat/Game/TacticalAIService.swift
       - path: NChat/Assets.xcassets
         buildPhase: resources
     settings:
