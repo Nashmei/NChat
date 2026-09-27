@@ -441,7 +441,7 @@ struct PlayView: View {
                     .shadow(color: .black.opacity(0.35), radius: 4, y: 3)
                     .overlay(Image(systemName: icon).font(.title2.bold()).foregroundStyle(.white))
                 Text(value)
-                    .font(.caption2.black()).foregroundStyle(.white)
+                    .font(.caption2.weight(.black)).foregroundStyle(.white)
                     .padding(5).background(.red, in: Circle())
                     .offset(x: 3, y: 3)
             }
