@@ -1,0 +1,15 @@
+import Foundation
+struct MatchResult{var cells:Set<Cell>=[];var specials:[Cell:Special]=[:]}
+enum MatchEngine{
+ static let size=8
+ static func freshBoard()->[[Tile]]{var b=Array(repeating:Array(repeating:Tile(kind:.ruby),count:size),count:size)
+  for r in 0..<size{for c in 0..<size{var a=GemKind.allCases;if c>=2 && b[r][c-1].kind==b[r][c-2].kind{a.removeAll{$0==b[r][c-1].kind}};if r>=2 && b[r-1][c].kind==b[r-2][c].kind{a.removeAll{$0==b[r-1][c].kind}};b[r][c]=Tile(kind:a.randomElement() ?? .ruby)}};return b}
+ static func adjacent(_ a:Cell,_ b:Cell)->Bool{abs(a.row-b.row)+abs(a.col-b.col)==1}
+ static func matches(_ b:[[Tile]])->MatchResult{var x=MatchResult()
+  for r in 0..<size{var s=0;while s<size{var e=s+1;while e<size && b[r][e].kind==b[r][s].kind{e+=1};let n=e-s;if n>=3{for c in s..<e{x.cells.insert(Cell(row:r,col:c))};if n>=5{x.specials[Cell(row:r,col:s+n/2)]=.rainbow}else if n==4{x.specials[Cell(row:r,col:s+1)]=.rowRocket}};s=e}}
+  for c in 0..<size{var s=0;while s<size{var e=s+1;while e<size && b[e][c].kind==b[s][c].kind{e+=1};let n=e-s;if n>=3{for r in s..<e{x.cells.insert(Cell(row:r,col:c))};if n>=5{x.specials[Cell(row:s+n/2,col:c)]=.rainbow}else if n==4{x.specials[Cell(row:s+1,col:c)]=.columnRocket}};s=e}}
+  for p in x.cells{let h=(p.col>0 && x.cells.contains(Cell(row:p.row,col:p.col-1)))||(p.col<size-1 && x.cells.contains(Cell(row:p.row,col:p.col+1)));let v=(p.row>0 && x.cells.contains(Cell(row:p.row-1,col:p.col)))||(p.row<size-1 && x.cells.contains(Cell(row:p.row+1,col:p.col)));if h&&v{x.specials[p]=.bomb}};return x}
+ static func expanded(_ initial:Set<Cell>,board:[[Tile]])->Set<Cell>{var clear=initial;var q=Array(initial);var seen=Set<Cell>();while let p=q.popLast(){if seen.contains(p){continue};seen.insert(p);switch board[p.row][p.col].special{case .rowRocket:for c in 0..<size{let z=Cell(row:p.row,col:c);if clear.insert(z).inserted{q.append(z)}};case .columnRocket:for r in 0..<size{let z=Cell(row:r,col:p.col);if clear.insert(z).inserted{q.append(z)}};case .bomb:for r in max(0,p.row-1)...min(size-1,p.row+1){for c in max(0,p.col-1)...min(size-1,p.col+1){let z=Cell(row:r,col:c);if clear.insert(z).inserted{q.append(z)}}};case .rainbow:let k=board[p.row][p.col].kind;for r in 0..<size{for c in 0..<size where board[r][c].kind==k{clear.insert(Cell(row:r,col:c))}};case .none:break}};return clear}
+ static func collapse(_ b:inout [[Tile]],clearing:Set<Cell>,specials:[Cell:Special]){for c in 0..<size{var a:[Tile]=[];for r in stride(from:size-1,through:0,by:-1) where !clearing.contains(Cell(row:r,col:c)){a.append(b[r][c])};while a.count<size{a.append(Tile(kind:GemKind.allCases.randomElement() ?? .ruby))};for r in 0..<size{b[size-1-r][c]=a[r]}};for(p,s) in specials{b[min(size-1,max(0,p.row))][p.col].special=s}}
+ static func hasMove(_ b:[[Tile]])->Bool{var a=b;for r in 0..<size{for c in 0..<size{for d in [(0,1),(1,0)]{let nr=r+d.0,nc=c+d.1;if nr>=size||nc>=size{continue};a[r][c]=b[nr][nc];a[nr][nc]=b[r][c];if !matches(a).cells.isEmpty{return true};a=b}}};return false}
+}
