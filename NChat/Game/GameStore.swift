@@ -19,11 +19,9 @@ final class GameStore: ObservableObject {
     @Published var proxyURL = ""
     @Published var statusMessage = "Ready"
 
-    @Published var selectedMode: GameMode = .training
+    @Published var selectedMode: GameMode = .skirmish
     @Published var missions: [DailyMission] = DailyMission.defaults
     @Published var loadout = Loadout()
-    @Published var matchmaking = MatchmakingState()
-    @Published var online = OnlineConfiguration()
     @Published var soundEnabled = true
     @Published var hapticsEnabled = true
     @Published var language: AppLanguage = .system
@@ -129,29 +127,7 @@ final class GameStore: ObservableObject {
         }
     }
 
-    func startMatchmaking() async {
-        guard selectedMode != .training else {
-            resetBattle()
-            startBattle()
-            return
-        }
-        matchmaking.searching = true
-        statusMessage = "Searching for opponent…"
-        do {
-            let ticket = try await OnlineService.shared.requestMatch(
-                baseURL: online.backendURL,
-                token: online.playerToken,
-                rating: progress.rating,
-                mode: selectedMode
-            )
-            statusMessage = ticket.status
-        } catch {
-            statusMessage = error.localizedDescription
-        }
-        matchmaking.searching = false
-    }
-
-    func leaderboard() -> [LeaderboardEntry] {
+    func startSelectedMode() {\n        resetBattle()\n        startBattle()\n    }\n\n    func leaderboard() -> [LeaderboardEntry] {
         [
             LeaderboardEntry(name: "NOVA", rating: 1428, wins: 81, isPlayer: false),
             LeaderboardEntry(name: "VECTOR", rating: 1310, wins: 64, isPlayer: false),
