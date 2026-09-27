@@ -147,27 +147,19 @@ struct MapView: View {
         GeometryReader { geo in
             ZStack {
                 RoyalWorldBackground()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        title
-                        stats
-                            .padding(.bottom, 20)
-
-                        ZStack {
-                            RoyalPath()
-                                .stroke(
-                                    LinearGradient(colors: [.yellow.opacity(0.85), .orange], startPoint: .top, endPoint: .bottom),
-                                    style: StrokeStyle(lineWidth: 12, lineCap: .round, dash: [4, 18])
-                                )
-                                .frame(height: 1500)
-                                .padding(.horizontal, 70)
-
-                            VStack(spacing: 18) {
-                                ForEach(1...30, id: \.self) { number in
-                                    levelNode(number, width: geo.size.width)
-                                }
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators:false) {
+                        VStack(spacing:0) {
+                            mapHeader
+                            ForEach((0..<5).reversed(),id:\.self) { region in
+                                regionSection(region,width:geo.size.width)
                             }
-                            .padding(.vertical, 24)
+                            Color.clear.frame(height:90)
+                        }
+                    }
+                    .onAppear {
+                        withAnimation(.easeOut(duration:0.5)) {
+                            proxy.scrollTo(game.save.unlockedLevel,anchor:.center)
                         }
                     }
                 }
@@ -175,77 +167,110 @@ struct MapView: View {
         }
     }
 
-    private var title: some View {
-        VStack(spacing: 2) {
-            ZStack {
-                Circle()
-                    .fill(LinearGradient(colors: [.yellow, .orange], startPoint: .top, endPoint: .bottom))
-                    .frame(width: 74, height: 74)
-                    .shadow(color: .yellow.opacity(0.55), radius: 16)
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 39, weight: .black))
-                    .foregroundStyle(.white)
+    private var mapHeader: some View {
+        VStack(spacing:8) {
+            TopCurrencyBar().environmentObject(game)
+            CrownLogo().scaleEffect(0.78)
+            Text("رحلة استعادة المملكة")
+                .font(.headline.bold()).foregroundStyle(.white)
+                .shadow(color:.black.opacity(0.55),radius:3,y:2)
+        }
+        .padding(.top,8).padding(.bottom,14)
+    }
+
+    private func regionSection(_ region:Int,width:CGFloat)->some View {
+        let start=region*6+1
+        let end=min(30,start+5)
+        let names=["حدائق القصر","وادي النوافير","غابة الزمرد","مرتفعات التاج","القصر الذهبي"]
+        return VStack(spacing:6) {
+            HStack(spacing:8) {
+                Image(systemName:["leaf.fill","drop.fill","tree.fill","mountain.2.fill","crown.fill"][region])
+                Text(names[region]).font(.headline.black())
             }
-            Text("CROWN")
-                .font(.system(size: 38, weight: .black, design: .rounded))
-                .foregroundStyle(.yellow)
-                .shadow(color: .black.opacity(0.6), radius: 2, y: 2)
-            Text("GARDENS")
-                .font(.system(size: 23, weight: .black, design: .rounded))
-                .tracking(5)
-                .foregroundStyle(.white)
-        }
-        .padding(.top, 18)
-    }
+            .foregroundStyle(.white)
+            .padding(.horizontal,18).padding(.vertical,8)
+            .background(RoyalTheme.navy.opacity(0.88),in:Capsule())
+            .overlay(Capsule().stroke(RoyalTheme.gold,lineWidth:2))
 
-    private var stats: some View {
-        HStack(spacing: 8) {
-            StatPill(icon: "heart.fill", value: "\(game.save.lives)", color: .pink)
-            StatPill(icon: "star.fill", value: "\(game.save.stars)", color: .yellow)
-            StatPill(icon: "circle.fill", value: "\(game.save.coins)", color: .orange)
-        }
-        .padding(.top, 12)
-    }
+            ZStack {
+                RoyalPath()
+                    .stroke(
+                        LinearGradient(colors:[.yellow,.orange],startPoint:.bottom,endPoint:.top),
+                        style:StrokeStyle(lineWidth:10,lineCap:.round,dash:[3,17])
+                    )
+                    .frame(width:min(width*0.72,320),height:500)
 
-    private func levelNode(_ number: Int, width: CGFloat) -> some View {
-        let open = number <= game.save.unlockedLevel
-        let stars = game.save.completed[number] ?? 0
-        let offset = sin(Double(number) * 1.42) * Double(min(width * 0.25, 95))
-        return Button {
-            if open && game.save.lives > 0 { game.selectLevel(number) }
-        } label: {
-            VStack(spacing: 3) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            open
-                            ? LinearGradient(colors: [.yellow, .orange], startPoint: .top, endPoint: .bottom)
-                            : LinearGradient(colors: [.gray, .black.opacity(0.65)], startPoint: .top, endPoint: .bottom)
-                        )
-                        .frame(width: 70, height: 70)
-                        .overlay(Circle().stroke(.white.opacity(0.85), lineWidth: 4))
-                        .shadow(color: open ? .yellow.opacity(0.45) : .black.opacity(0.4), radius: 8, y: 4)
-                    if open {
-                        Text("\(number)")
-                            .font(.system(size: 24, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                    } else {
-                        Image(systemName: "lock.fill").font(.title2)
+                VStack(spacing:5) {
+                    ForEach(start...end,id:\.self) { number in
+                        levelNode(number,width:width)
+                            .id(number)
                     }
                 }
-                HStack(spacing: 2) {
-                    ForEach(0..<3, id: \.self) { index in
-                        Image(systemName: index < stars ? "star.fill" : "star")
-                            .font(.caption2.bold())
-                            .foregroundStyle(.yellow)
+                .padding(.vertical,12)
+            }
+            .frame(height:520)
+            .background(
+                RoundedRectangle(cornerRadius:38)
+                    .fill(.white.opacity(0.07))
+                    .overlay(RoundedRectangle(cornerRadius:38).stroke(.white.opacity(0.16),lineWidth:1))
+            )
+            .padding(.horizontal,10)
+        }
+        .padding(.bottom,18)
+    }
+
+    private func levelNode(_ number:Int,width:CGFloat)->some View {
+        let open=number<=game.save.unlockedLevel
+        let stars=game.save.completed[number] ?? 0
+        let current=number==game.save.unlockedLevel
+        let offset=sin(Double(number)*1.55)*Double(min(width*0.24,92))
+        return Button {
+            if open && game.save.lives>0 { game.selectLevel(number) }
+        } label: {
+            ZStack {
+                if current {
+                    RoyalKing().scaleEffect(0.25).offset(x:-68,y:-10)
+                }
+                VStack(spacing:2) {
+                    ZStack {
+                        Circle()
+                            .fill(open
+                                  ? LinearGradient(colors:[.yellow,.orange],startPoint:.top,endPoint:.bottom)
+                                  : LinearGradient(colors:[.gray,Color.black.opacity(0.72)],startPoint:.top,endPoint:.bottom))
+                            .frame(width:76,height:76)
+                            .overlay(Circle().stroke(.white,lineWidth:4))
+                            .overlay(Circle().stroke(RoyalTheme.navy.opacity(0.6),lineWidth:2).padding(5))
+                            .shadow(color:open ? .yellow.opacity(0.48):.black.opacity(0.35),radius:9,y:5)
+                        if open {
+                            Text("\(number)")
+                                .font(.system(size:25,weight:.black,design:.rounded))
+                                .foregroundStyle(.white)
+                                .shadow(color:.black.opacity(0.4),radius:2,y:2)
+                        } else {
+                            Image(systemName:"lock.fill").font(.title2).foregroundStyle(.white.opacity(0.75))
+                        }
                     }
+                    HStack(spacing:1) {
+                        ForEach(0..<3,id:\.self) { i in
+                            Image(systemName:i<stars ? "star.fill":"star")
+                                .font(.caption.bold())
+                                .foregroundStyle(i<stars ? .yellow:.white.opacity(0.55))
+                        }
+                    }
+                }
+                if current {
+                    Text("التالي")
+                        .font(.caption2.black()).foregroundStyle(.white)
+                        .padding(.horizontal,8).padding(.vertical,4)
+                        .background(.green,in:Capsule())
+                        .offset(y:-47)
                 }
             }
         }
         .buttonStyle(.plain)
         .disabled(!open)
-        .offset(x: offset)
-        .frame(maxWidth: .infinity)
+        .offset(x:offset)
+        .frame(maxWidth:.infinity)
     }
 }
 
