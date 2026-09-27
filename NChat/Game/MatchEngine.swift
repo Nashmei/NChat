@@ -124,6 +124,62 @@ enum MatchEngine {
         return clear
     }
 
+    static func specialCombo(_ a: Cell, _ b: Cell, board: inout [[Tile]]) -> Set<Cell>? {
+        let sa = board[a.row][a.col].special
+        let sb = board[b.row][b.col].special
+        guard sa != .none && sb != .none else { return nil }
+
+        var clear = Set<Cell>([a, b])
+        let rockets: Set<Special> = [.rowRocket, .columnRocket]
+
+        if sa == .rainbow || sb == .rainbow {
+            let rainbowCell = sa == .rainbow ? a : b
+            let otherCell = sa == .rainbow ? b : a
+            let otherSpecial = board[otherCell.row][otherCell.col].special
+            let targetKind = board[otherCell.row][otherCell.col].kind
+
+            for row in 0..<size {
+                for col in 0..<size where board[row][col].kind == targetKind {
+                    let p = Cell(row: row, col: col)
+                    board[row][col].special = otherSpecial == .rainbow ? .rainbow : otherSpecial
+                    clear.insert(p)
+                }
+            }
+            clear.insert(rainbowCell)
+            return expanded(clear, board: board)
+        }
+
+        if sa == .bomb && sb == .bomb {
+            let centerRow = (a.row + b.row) / 2
+            let centerCol = (a.col + b.col) / 2
+            for row in max(0, centerRow - 2)...min(size - 1, centerRow + 2) {
+                for col in max(0, centerCol - 2)...min(size - 1, centerCol + 2) {
+                    clear.insert(Cell(row: row, col: col))
+                }
+            }
+            return expanded(clear, board: board)
+        }
+
+        if (sa == .bomb && rockets.contains(sb)) || (sb == .bomb && rockets.contains(sa)) {
+            let center = sa == .bomb ? a : b
+            for row in max(0, center.row - 1)...min(size - 1, center.row + 1) {
+                for col in 0..<size { clear.insert(Cell(row: row, col: col)) }
+            }
+            for col in max(0, center.col - 1)...min(size - 1, center.col + 1) {
+                for row in 0..<size { clear.insert(Cell(row: row, col: col)) }
+            }
+            return expanded(clear, board: board)
+        }
+
+        if rockets.contains(sa) && rockets.contains(sb) {
+            for col in 0..<size { clear.insert(Cell(row: a.row, col: col)) }
+            for row in 0..<size { clear.insert(Cell(row: row, col: a.col)) }
+            return expanded(clear, board: board)
+        }
+
+        return expanded(clear, board: board)
+    }
+
     static func collapse(_ board: inout [[Tile]], clearing: Set<Cell>, specials: [Cell: Special]) {
         for col in 0..<size {
             var survivors: [Tile] = []
