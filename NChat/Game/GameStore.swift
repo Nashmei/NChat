@@ -113,7 +113,7 @@ final class GameStore: ObservableObject {
         if playerCore < 35 { tactic = .assault }
         else if enemyCore < 40 { tactic = .defend }
         else { tactic = Tactic.allCases.randomElement() ?? .balanced }
-        return TacticalPlan(tactic: tactic, focusLane: Int.random(in: 0...2), aggression: tactic == .assault ? 0.85 : 0.55, holdPosition: tactic == .defend, summary: "Enemy (tactic.rawValue)")
+        return TacticalPlan(tactic: tactic, focusLane: Int.random(in: 0...2), aggression: tactic == .assault ? 0.85 : 0.55, holdPosition: tactic == .defend, summary: "Enemy \\(tactic.rawValue)")
     }
 
     private func resolveRound() {
@@ -131,7 +131,7 @@ final class GameStore: ObservableObject {
 
         events.insert(BattleEvent(
             round: round,
-            text: "R(round) • (playerPlan.tactic.rawValue) vs (enemyPlan.tactic.rawValue) • Enemy -(damageToEnemy) / You -(damageToPlayer)",
+            text: "R\\(round) • \\(playerPlan.tactic.rawValue) vs \\(enemyPlan.tactic.rawValue) • Enemy -\\(damageToEnemy) / You -\\(damageToPlayer)",
             isPositive: damageToEnemy >= damageToPlayer
         ), at: 0)
     }
