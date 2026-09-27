@@ -1,11 +1,11 @@
-name: Build NChat IPA
+name: Build Prompt Wars IPA
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build NChat
+    name: Build Prompt Wars
     runs-on: macos-14
     timeout-minutes: 30
 
@@ -34,7 +34,7 @@ jobs:
           set -euo pipefail
           ICON_DIR="NChat/Assets.xcassets/AppIcon.appiconset"
           SOURCE="$ICON_DIR/AppIcon-1024.png"
-          test -f "$SOURCE"
+          test -s "$SOURCE"
           file "$SOURCE"
           WIDTH="$(sips -g pixelWidth "$SOURCE" | awk '/pixelWidth/ {print $2}')"
           HEIGHT="$(sips -g pixelHeight "$SOURCE" | awk '/pixelHeight/ {print $2}')"
@@ -48,9 +48,7 @@ jobs:
           sips -z 120 120 "$SOURCE" --out "$ICON_DIR/AppIcon-120-40.png" >/dev/null
           sips -z 120 120 "$SOURCE" --out "$ICON_DIR/AppIcon-120.png" >/dev/null
           sips -z 180 180 "$SOURCE" --out "$ICON_DIR/AppIcon-180.png" >/dev/null
-          for file in "$ICON_DIR"/AppIcon-*.png; do
-            test -s "$file"
-          done
+          for icon in "$ICON_DIR"/AppIcon-*.png; do test -s "$icon"; done
 
       - name: Generate Xcode project
         shell: bash
@@ -58,34 +56,35 @@ jobs:
           set -euo pipefail
           xcodegen generate
           test -d NChat.xcodeproj
+          xcodebuild -project NChat.xcodeproj -scheme NChat -showBuildSettings > build-settings.txt
+          grep -E "PRODUCT_NAME|PRODUCT_BUNDLE_IDENTIFIER|WRAPPER_NAME" build-settings.txt
 
       - name: Build unsigned device app
         shell: bash
         run: |
           set -euo pipefail
-          set -o pipefail
           rm -rf DerivedData
-          xcodebuild \
-            -project NChat.xcodeproj \
-            -scheme NChat \
-            -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath DerivedData \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            clean build | tee xcodebuild.log
+          xcodebuild             -project NChat.xcodeproj             -scheme NChat             -configuration Release             -sdk iphoneos             -derivedDataPath DerivedData             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             CODE_SIGN_IDENTITY=""             clean build | tee xcodebuild.log
 
       - name: Package IPA
         shell: bash
         run: |
           set -euo pipefail
-          APP="DerivedData/Build/Products/Release-iphoneos/Prompt Wars.app"
+          PRODUCTS="DerivedData/Build/Products/Release-iphoneos"
+          APP="$(find "$PRODUCTS" -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$APP"
           test -d "$APP"
+          test -f "$APP/Info.plist"
+          EXECUTABLE="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Info.plist")"
+          test -n "$EXECUTABLE"
+          test -f "$APP/$EXECUTABLE"
+          echo "Packaging: $APP"
           rm -rf Payload PromptWars-unsigned.ipa
           mkdir -p Payload
-          cp -R "$APP" "Payload/Prompt Wars.app"
+          cp -R "$APP" "Payload/$(basename "$APP")"
           zip -qry PromptWars-unsigned.ipa Payload
+          test -s PromptWars-unsigned.ipa
+          unzip -l PromptWars-unsigned.ipa | head -40
           ls -lh PromptWars-unsigned.ipa
 
       - name: Upload IPA
@@ -96,11 +95,13 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload build log on failure
+      - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: NChat-Build-Log
-          path: xcodebuild.log
+          name: PromptWars-Build-Diagnostics
+          path: |
+            xcodebuild.log
+            build-settings.txt
           if-no-files-found: ignore
           retention-days: 7
