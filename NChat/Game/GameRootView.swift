@@ -244,36 +244,112 @@ struct GemView: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(tile.kind.color.gradient)
-                .shadow(color: tile.kind.color.opacity(0.45), radius: selected ? 10 : 3)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(.white.opacity(selected ? 1.0 : 0.25), lineWidth: selected ? 3 : 1)
+            gemShape
+                .fill(
+                    LinearGradient(
+                        colors: [tile.kind.color.opacity(0.72), tile.kind.color, .white.opacity(0.32)],
+                        startPoint: .bottomLeading,
+                        endPoint: .topTrailing
+                    )
                 )
+                .overlay(gemShape.stroke(.white.opacity(0.48), lineWidth: 1.5))
+                .shadow(color: .black.opacity(0.28), radius: 2, y: 3)
+                .shadow(color: tile.kind.color.opacity(0.55), radius: selected ? 11 : 3)
+
+            gemShape
+                .fill(
+                    LinearGradient(
+                        colors: [.white.opacity(0.58), .clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                )
+                .scaleEffect(0.72)
+                .offset(y: -5)
 
             Image(systemName: specialSymbol)
-                .font(.system(size: 21, weight: .black))
-                .foregroundStyle(.white)
-                .shadow(radius: 2)
+                .font(.system(size: tile.special == .none ? 17 : 23, weight: .black))
+                .foregroundStyle(.white.opacity(tile.special == .none ? 0.72 : 1.0))
+                .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
 
             if tile.blocker > 0 {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(.white.opacity(0.85), lineWidth: 4)
-                Image(systemName: "snowflake").foregroundStyle(.white.opacity(0.90))
+                RoundedRectangle(cornerRadius: 13)
+                    .fill(.cyan.opacity(0.12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 13)
+                            .stroke(.white.opacity(0.92), lineWidth: 3)
+                    )
+                Image(systemName: "snowflake")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                    .shadow(color: .cyan, radius: 4)
             }
         }
-        .scaleEffect(selected ? 1.08 : 1.0)
-        .animation(.spring(response: 0.20), value: selected)
+        .padding(3)
+        .scaleEffect(selected ? 1.10 : 1.0)
+        .rotationEffect(.degrees(selected ? 2 : 0))
+        .animation(.spring(response: 0.22, dampingFraction: 0.62), value: selected)
+    }
+
+    private var gemShape: AnyShape {
+        switch tile.kind {
+        case .ruby:
+            return AnyShape(RoundedRectangle(cornerRadius: 16))
+        case .sapphire:
+            return AnyShape(DiamondShape())
+        case .emerald:
+            return AnyShape(Capsule())
+        case .sun:
+            return AnyShape(CrownGemShape())
+        case .grape:
+            return AnyShape(RoundedRectangle(cornerRadius: 7))
+        case .pearl:
+            return AnyShape(Circle())
+        }
     }
 
     private var specialSymbol: String {
         switch tile.special {
         case .bomb: return "burst.fill"
-        case .rainbow: return "rainbow"
-        case .rowRocket: return "arrow.left.and.right"
-        case .columnRocket: return "arrow.up.and.down"
-        case .none: return tile.kind.symbol
+        case .rainbow: return "sparkles"
+        case .rowRocket: return "arrow.left.and.right.circle.fill"
+        case .columnRocket: return "arrow.up.and.down.circle.fill"
+        case .none:
+            switch tile.kind {
+            case .ruby: return "heart.fill"
+            case .sapphire: return "diamond.fill"
+            case .emerald: return "leaf.fill"
+            case .sun: return "crown.fill"
+            case .grape: return "flower.fill"
+            case .pearl: return "drop.fill"
+            }
+        }
+    }
+}
+
+struct DiamondShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { p in
+            p.move(to: CGPoint(x: rect.midX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+            p.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.minX, y: rect.midY))
+            p.closeSubpath()
+        }
+    }
+}
+
+struct CrownGemShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { p in
+            p.move(to: CGPoint(x: rect.minX + rect.width * 0.08, y: rect.maxY * 0.82))
+            p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.02, y: rect.minY + rect.height * 0.25))
+            p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.30, y: rect.minY + rect.height * 0.48))
+            p.addLine(to: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.10))
+            p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.70, y: rect.minY + rect.height * 0.48))
+            p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.98, y: rect.minY + rect.height * 0.25))
+            p.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.08, y: rect.maxY * 0.82))
+            p.closeSubpath()
         }
     }
 }
