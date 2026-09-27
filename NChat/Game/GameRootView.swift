@@ -452,12 +452,23 @@ struct PlayView: View {
 
 struct BoardView: View {
     @EnvironmentObject var game: CrownStore
+    @State private var pulse = false
 
     var body: some View {
         GeometryReader { geometry in
             let cellSize = geometry.size.width / CGFloat(MatchEngine.size)
             ZStack {
-                RoundedRectangle(cornerRadius: 22).fill(.black.opacity(0.24))
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(.black.opacity(0.24))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(
+                                game.combo > 1 ? Color.yellow.opacity(0.85) : Color.white.opacity(0.10),
+                                lineWidth: game.combo > 1 ? 3 : 1
+                            )
+                    )
+                    .shadow(color: game.combo > 1 ? .yellow.opacity(0.45) : .clear, radius: pulse ? 16 : 4)
+
                 VStack(spacing: 2) {
                     ForEach(0..<MatchEngine.size, id: \.self) { row in
                         HStack(spacing: 2) {
@@ -465,7 +476,12 @@ struct BoardView: View {
                                 let cell = Cell(row: row, col: col)
                                 let tile = game.board[row][col]
                                 GemView(tile: tile, selected: game.selected == cell)
+                                    .id(tile.id)
                                     .frame(width: cellSize - 2, height: cellSize - 2)
+                                    .transition(.asymmetric(
+                                        insertion: .scale(scale: 0.45).combined(with: .opacity),
+                                        removal: .scale(scale: 1.35).combined(with: .opacity)
+                                    ))
                                     .contentShape(Rectangle())
                                     .onTapGesture { game.tap(cell) }
                                     .gesture(
@@ -478,13 +494,20 @@ struct BoardView: View {
                                         }
                                     )
                                     .contextMenu {
-                                        Button("Hammer") { game.hammer(cell) }
+                                        Button("مطرقة") { game.hammer(cell) }
                                     }
                             }
                         }
                     }
                 }
                 .padding(3)
+                .animation(.spring(response: 0.30, dampingFraction: 0.70), value: game.board)
+            }
+            .scaleEffect(pulse ? 1.012 : 1.0)
+            .animation(.easeInOut(duration: 0.16), value: pulse)
+            .onChange(of: game.celebration) { _, _ in
+                pulse = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { pulse = false }
             }
         }
     }
